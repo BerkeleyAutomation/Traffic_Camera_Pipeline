@@ -13,10 +13,11 @@ class Config(object):
         ###STREAMING####
         self.STREAM_OUTPUT_SEGMENT_TIME_LIMIT = 60  # approximate length of video segments in seconds
         self.STREAM_OUTPUT_DIR_SIZE_LIMIT = 1e9     # maximum size limit for downloaded video in bytes
-        
+
         self.check_point_path = 'Checkpoints/VGG_VOC0712_SSD_300x300_ft_iter_120000.ckpt'
         self.video_root_dir = 'Train_Videos'
         self.save_debug_img_path = 'Debug_Imgs/'
+        self.crop_image_path = 'crop_image.png'
 
         ####REGISTRATION####
         self.street_corners = np.array([[765, 385],

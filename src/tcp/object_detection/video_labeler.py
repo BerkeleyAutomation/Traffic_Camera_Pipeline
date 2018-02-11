@@ -8,7 +8,9 @@ import numpy as np
 from urlparse import parse_qs
 
 from AbstractDetector import AbstractDetector
-from ssd_detector import SSD_VGG16Detector
+from ssd_detector import SSD_VGG16Detector 
+from tcp.object_detection.cropper import Cropper
+
 import IPython
 
 
@@ -20,6 +22,10 @@ class LabelVideo():
         self.config = config
         self.ssd_detector = SSD_VGG16Detector('ssd_vgg16', self.config.check_point_path)
         self.t = 0
+
+        self.cropper = Cropper(self.config)
+
+
 
 
 
@@ -89,8 +95,12 @@ class LabelVideo():
             if rclasses[i] == 7:
                 x_min,y_min,x_max,y_max = rbboxes[i,:]
 
-                point = ((x_min+x_max)/2.0,y_max, 'car',self.t)
-                frame.append(point)
+                if self.cropper.check_is_valid(x_min,x_max,y_min,y_max):
+
+                    point = ((x_min+x_max)/2.0,y_max, 'car',self.t)
+                    frame.append(point)
+                else:
+                    print "FOUND PARKED CAR"
 
         return frame
 

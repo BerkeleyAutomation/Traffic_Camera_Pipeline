@@ -24,6 +24,8 @@ vl = LabelVideo(cnfg)
 vr = VizRegristration(cnfg)
 hm = Homography(cnfg,vz_debug=vr)
 
+#vr.get_color_template(5)
+
 
 vr.load_frames()
 

@@ -11,6 +11,8 @@ import IPython
 from gym_urbandriving.agents import KeyboardAgent, AccelAgent, NullAgent, TrafficLightAgent, RRTAgent
 from gym_urbandriving.assets import Car, TrafficLight
 
+import colorlover as cl
+
 
 
 class VizRegristration():
@@ -50,10 +52,29 @@ class VizRegristration():
         self.env._reset(new_state=self.init_state)
 
 
+    def compute_color_template(self,num_trajectories):
+
+        color_interp = np.linspace(0,255,num = num_trajectories)
+        color_template = []
+
+        for i in range(num_trajectories):
+
+            color = int(color_interp[i])
+            color_template.append((color,color,color))
+       
+        return color_template
+
+
+
     def visualize_trajectory_dots(self,trajectories):
         self.initalize_simulator(0,0)
 
         active_trajectories = []
+        way_points = []
+
+        color_template = self.compute_color_template(len(trajectories))
+
+        color_index = 0
         for t in range(500):
             print "T ",t
 
@@ -62,21 +83,24 @@ class VizRegristration():
                 traj = trajectories[traj_index]
                 
                 if t == traj.initial_time_step:
-                  
-                    active_trajectories.append(traj)
+                    
+                    color_match = [traj,color_template[color_index]]
+                    active_trajectories.append(color_match)
+                    color_index += 1
             
-            way_points = []
+            
             for traj_index in range(len(active_trajectories)):
 
-                traj = active_trajectories[traj_index]
+                traj = active_trajectories[traj_index][0]
                 next_state = traj.get_next_state()
 
 
                 if not next_state == None:
-                    way_points.append(next_state)
+                    w_p = [next_state,active_trajectories[traj_index][1]]
+                    way_points.append(w_p)
 
 
-            self.env._render(waypoints = way_points)
+            self.env._render(traffic_trajectories  = way_points)
            
             cv2.imshow('img',self.imgs[t])
             cv2.waitKey(30)
@@ -117,7 +141,7 @@ class VizRegristration():
 
     def visualize_camera_point(self,x,y,t):
 
-        
+
         img = self.imgs[t]
 
         point = [x,y]
