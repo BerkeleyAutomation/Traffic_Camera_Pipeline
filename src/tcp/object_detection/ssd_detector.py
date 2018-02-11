@@ -49,7 +49,7 @@ class SSD_VGG16Detector(AbstractDetector):
     """
         Main image processing routine.
     """
-    def getBoundingBox(self, img, select_threshold=0.5, nms_threshold=.45, net_shape=(300, 300)):
+    def get_bounding_box(self, img, select_threshold=0.5, nms_threshold=.45, net_shape=(300, 300)):
         # Run SSD network.
         rimg, rpredictions, rlocalisations, rbbox_img = self.isess.run([self.image_4d, self.predictions, self.localisations, self.bbox_img],
                                                                   feed_dict={self.img_input: img})
