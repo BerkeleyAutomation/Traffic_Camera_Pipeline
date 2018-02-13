@@ -36,6 +36,3 @@ class Config(object):
 
         self.use_pedestrian = False
         self.save_images = True
-
-		# Registration
-
