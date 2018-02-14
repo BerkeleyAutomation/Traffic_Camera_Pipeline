@@ -15,7 +15,6 @@ class StreamDownloader(object):
         self.stream_src = stream_src
         self.stream_save_path = stream_save_path
         self.config = config
-        self.frame_count = 0
         self.cap = None
 
     def check_capture(self):
@@ -76,8 +75,14 @@ class StreamDownloader(object):
         timestamp = localtime()
         timestr = strftime('%Y-%m-%d_%H-%M-%S', timestamp)
         out = cv2.VideoWriter('%s_%s.mp4' % (filepath, timestr), fourcc, fps, (self.width, self.height))
+
+        if save_frames:
+            output_frames_dir_path = os.path.join(self.stream_save_path, 'frames')
+            if not os.path.exists(output_frames_dir_path):
+                os.makedirs(output_frames_dir_path)
         
         dir_size_maxed = False
+        frame_count = 0
         try:
             while self.cap.isOpened():
                 if self.config.STREAM_OUTPUT_SEGMENT_TIME_LIMIT is not None:
@@ -92,12 +97,12 @@ class StreamDownloader(object):
 
                 out.write(frame)
                 if save_frames:
-                    output_frames_path = os.path.join(self.stream_save_path, 'frames')
+                    output_frames_path = os.path.join(output_frames_dir_path, '%s_%s' % (filename, timestr))
                     if not os.path.exists(output_frames_path):
                         os.makedirs(output_frames_path)
-                    output_frames_path = os.path.join(output_frames_path, '%s_%010d.jpg' % (filename, self.frame_count))
+                    output_frames_path = os.path.join(output_frames_path, '%06d.jpg' % (frame_count))
                     cv2.imwrite(output_frames_path, frame)
-                self.frame_count += 1
+                frame_count += 1
 
 
                 if self.config.STREAM_OUTPUT_DIR_SIZE_LIMIT is not None:
