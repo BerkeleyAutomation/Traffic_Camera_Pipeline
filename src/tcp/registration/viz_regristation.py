@@ -6,9 +6,11 @@ import numpy as np
 import pickle
 import skimage.transform
 import cv2
+import IPython
 
 from gym_urbandriving.agents import KeyboardAgent, AccelAgent, NullAgent, TrafficLightAgent, RRTAgent
 from gym_urbandriving.assets import Car, TrafficLight
+
 
 
 
@@ -52,6 +54,8 @@ class VizRegristration():
 
 	def visualize_trajectory_dots(self,trajectories):
 		self.initalize_simulator(0,0)
+        IPython.embed()
+        print "got here"
 
         active_trajectories = []
 		for t in range(500):

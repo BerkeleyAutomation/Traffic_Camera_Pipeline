@@ -10,6 +10,8 @@ from urlparse import parse_qs
 from tcp.object_detection.video_labeler import LabelVideo
 from tcp.registration.homography import Homography
 from tcp.registration.iterative_filtering import IterativeFiltering
+from tcp.registration.nn_filtering import NNFiltering
+from tcp.registration.pfl_filtering import PFLFiltering
 from tcp.registration.viz_regristration import VizRegristration
 from tcp.object_detection.ssd_detector import SSD_VGG16Detector
 from tcp.configs.alberta_config import Config
@@ -31,10 +33,10 @@ vr.load_frames()
 
 
 
-iterative_filter = IterativeFiltering(cnfg)
+iterative_filter = PFLFiltering(cnfg)
 
 camera_view_trajectories = []
-camera_view_trajectory = pickle.load(open('test.p','r'))
+camera_view_trajectory = pickle.load(open('test_hard.p','r'))
 
 camera_view_trajectories.append(camera_view_trajectory)
 
