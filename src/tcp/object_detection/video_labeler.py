@@ -93,7 +93,7 @@ class LabelVideo():
 
 
             self.ssd_detector.cap.release()
-            IPython.embed()
+            
             return trajectory
 
 

@@ -35,11 +35,14 @@ class Config(object):
 
         self.alberta_img_dim = [1280,720]
 
+        self.traffic_light_threshold = 100  # any pixel with lightness in HLS color space below threadhold will be set to 0
+        self.traffic_light_bboxes = [(665, 244, 678, 280),  # (xmin, ymin, xmax, ymax) of the bounding box
+                                     (690, 245, 702, 278)]
+
         self.sim_scale = [1.04,1.10]
 
         self.use_pedestrian = False
         self.save_images = True
-
 
         ####FILTERING#######
         self.time_limit = 20
@@ -51,5 +54,4 @@ class Config(object):
                     Lane(550, 800, 400, 100, angle=(np.pi/2)),
                     Lane(800, 450, 400, 100, angle=-np.pi),
                     Lane(200, 550, 400, 100)]
-
 
