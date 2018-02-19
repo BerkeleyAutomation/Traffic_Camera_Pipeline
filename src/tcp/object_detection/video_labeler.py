@@ -18,32 +18,45 @@ from tcp.object_detection.init_labeler import InitLabeler
 
 class LabelVideo():
 
-    def __init__(self,config,net_path =None):
+    def __init__(self, config, net_path=None):
 
         self.config = config
         self.cropper = Cropper(self.config)
 
-        self.ssd_detector = SSD_VGG16Detector('ssd_vgg16', self.config.check_point_path,cropper = self.cropper)
+        self.ssd_detector = SSD_VGG16Detector('ssd_vgg16', self.config.check_point_path, cropper=self.cropper)
         self.t = 0
 
-        
-        self.init_labeler = InitLabeler()
-
-
-
-
-
-    def label_video(self,video_path, output_limit=500, num_skip_frames=1):
+    def label_video(self, video_path, output_limit=500, num_skip_frames=1):
             self.ssd_detector.setStreamURL(video_path)
             if not AbstractDetector.openCapture(self.ssd_detector):
                 raise ValueError('Video file %s failed to open.' % video_path)
             print 'Scanning %s...' % (video_path)
+
+
+            ### First pass: get bounding ###
+            all_rclasses = []
+            all_rscores = []
+            all_rbboxes = []
+            while self.ssd_detector.cap.isOpened():
+                ret, frame = self.ssd_detector.cap.read()
+                rclasses, rscores, rbboxes = self.ssd_detector.get_bounding_box(frame)
+                all_rclasses.append(rclasses)
+                all_rscores.append(rscores)
+                all_rbboxes.append(rbboxes)
+
+            ### CALL INITIAL LABELER ###
+            self.init_labeler = InitLabeler(self.config, self.ssd_detector.cap, all_rbboxes, all_rclasses)
+
+            # DEBUG SHORT-STOP return
+            return
 
             output_count = 0
             frame_skip = 0
 
             trajectory = []
 
+
+            ### Second pass: process bounding box data ###
             while self.ssd_detector.cap.isOpened():
                 ret, frame = self.ssd_detector.cap.read()
                 self.t += 1
@@ -58,12 +71,12 @@ class LabelVideo():
                     continue
 
                 # Process frame here
-                rclasses, rscores, rbboxes = self.ssd_detector.get_bounding_box(frame)
-                img = self.ssd_detector.drawBoundingBox(frame,rclasses, rscores, rbboxes)
+                rclasses = all_rclasses[output_count]
+                rscores = all_rscores[output_count]
+                rbboxes = all_rbboxes[output_count]
 
-
-                ###CALL INITIAL LABELER###
-                self.init_labeler(img)
+                # ###CALL INITIAL LABELER###
+                # self.init_labeler(img)
 
                 if self.config.save_images:
                     
@@ -75,8 +88,8 @@ class LabelVideo():
                 print "T ", self.t
                 current_frame = []
 
-                car_cords = self.get_car_cords(rclasses,rbboxes)
-                ped_cords = self.get_pedestrian_cords(rclasses,rbboxes)
+                car_cords = self.get_car_cords(output_count, rclasses, rbboxes)
+                ped_cords = self.get_pedestrian_cords(rclasses, rbboxes)
 
                 if output_count > output_limit:
                     break
@@ -97,7 +110,7 @@ class LabelVideo():
             return trajectory
 
 
-    def get_car_cords(self,rclasses,rbboxes):
+    def get_car_cords(self, frame_i, rclasses, rbboxes):
 
         frame = []
         for i in range(rclasses.shape[0]):
@@ -107,8 +120,8 @@ class LabelVideo():
                 if self.cropper.check_is_valid(x_min,x_max,y_min,y_max):
 
                     ###CHECK IF POINT IS VALID
-                    if self.init_labeler.stop_for_label:
-                        if self.init_labelr.get_point() == i:
+                    if self.init_labeler.has_init_label(frame_i):
+                        if i in self.init_labeler.get_arg_init_label(frame_i):
                             point = ((x_min+x_max)/2.0,y_max, 'car',self.t,'initial_state')
                     else:
                         point = ((x_min+x_max)/2.0,y_max, 'car',self.t,'not_initial_state')

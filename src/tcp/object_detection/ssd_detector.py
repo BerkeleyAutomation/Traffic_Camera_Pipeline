@@ -7,7 +7,8 @@ import tensorflow as tf
 
 slim = tf.contrib.slim
 
-sys.path.insert(0, 'src/tcp/object_detection/SSD/')
+import SSD
+sys.path.insert(0, os.path.dirname(SSD.__file__))
 from SSD.nets import ssd_vgg_300, ssd_common, np_methods
 from preprocessing import ssd_vgg_preprocessing
 from notebooks import visualization
