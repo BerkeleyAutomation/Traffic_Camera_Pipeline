@@ -54,13 +54,18 @@ class VizRegristration():
 
     def compute_color_template(self,num_trajectories):
 
-        color_interp = np.linspace(0,255,num = num_trajectories)
+        color_r = np.linspace(255,0,num = num_trajectories)
+        color_g = np.linspace(126,0,num = num_trajectories)
+        color_b = np.linspace(0,255,num = num_trajectories)
         color_template = []
 
         for i in range(num_trajectories):
 
-            color = int(color_interp[i])
-            color_template.append((color,color,color))
+            c_r = int(color_r[i])
+            c_g = int(color_g[i])
+            c_b = int(color_b[i])
+
+            color_template.append((c_r,c_g,c_b))
        
         return color_template
 
@@ -68,6 +73,8 @@ class VizRegristration():
 
     def visualize_trajectory_dots(self,trajectories):
         self.initalize_simulator(0,0)
+
+        
 
         active_trajectories = []
         way_points = []
@@ -92,15 +99,15 @@ class VizRegristration():
             for traj_index in range(len(active_trajectories)):
 
                 traj = active_trajectories[traj_index][0]
-                next_state = traj.get_next_state()
+                next_state,valid = traj.get_next_state()
 
 
-                if not next_state == None:
+                if valid:
                     w_p = [next_state,active_trajectories[traj_index][1]]
                     way_points.append(w_p)
 
 
-            self.env._render(traffic_trajectories  = way_points)
+            self.env._render(traffic_trajectories = way_points)
            
             cv2.imshow('img',self.imgs[t])
             cv2.waitKey(30)
@@ -132,6 +139,8 @@ class VizRegristration():
 
     def visualize_simulator_point(self,x,y):
         self.initalize_simulator(0,0)
+
+        IPython.embed()
         
         waypoints = [[x,y]]
         

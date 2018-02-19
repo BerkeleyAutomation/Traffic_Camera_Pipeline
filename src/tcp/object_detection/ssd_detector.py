@@ -15,7 +15,7 @@ from notebooks import visualization
 from AbstractDetector import AbstractDetector
 
 class SSD_VGG16Detector(AbstractDetector):
-    def __init__(self, architechture, ckpt_path, stream_url=None):
+    def __init__(self, architechture, ckpt_path, stream_url=None,cropper=None):
         super(SSD_VGG16Detector, self).__init__(architechture, stream_url=stream_url)
 
         gpu_options = tf.GPUOptions(allow_growth=True)
@@ -46,6 +46,8 @@ class SSD_VGG16Detector(AbstractDetector):
         # SSD default anchor boxes.
         self.ssd_anchors = ssd_net.anchors(net_shape)
 
+        self.cropper = None
+
     """
         Main image processing routine.
     """
@@ -70,5 +72,5 @@ class SSD_VGG16Detector(AbstractDetector):
         return rclasses, rscores, rbboxes
 
     def drawBoundingBox(self, img, rclasses, rscores, rbboxes):
-        visualization.bboxes_draw_on_img(img, rclasses, rscores, np.array(rbboxes), visualization.colors_plasma)
+        visualization.bboxes_draw_on_img(img, rclasses, rscores, np.array(rbboxes), visualization.colors_plasma,cropper=self.cropper)
         return img

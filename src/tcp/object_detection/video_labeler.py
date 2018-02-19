@@ -13,6 +13,7 @@ from tcp.object_detection.cropper import Cropper
 
 import IPython
 
+from tcp.object_detection.init_labeler import InitLabeler
 
 
 class LabelVideo():
@@ -20,10 +21,13 @@ class LabelVideo():
     def __init__(self,config,net_path =None):
 
         self.config = config
-        self.ssd_detector = SSD_VGG16Detector('ssd_vgg16', self.config.check_point_path)
+        self.cropper = Cropper(self.config)
+
+        self.ssd_detector = SSD_VGG16Detector('ssd_vgg16', self.config.check_point_path,cropper = self.cropper)
         self.t = 0
 
-        self.cropper = Cropper(self.config)
+        
+        self.init_labeler = InitLabeler()
 
 
 
@@ -55,9 +59,14 @@ class LabelVideo():
 
                 # Process frame here
                 rclasses, rscores, rbboxes = self.ssd_detector.get_bounding_box(frame)
+                img = self.ssd_detector.drawBoundingBox(frame,rclasses, rscores, rbboxes)
+
+
+                ###CALL INITIAL LABELER###
+                self.init_labeler(img)
 
                 if self.config.save_images:
-                    img = self.ssd_detector.drawBoundingBox(frame,rclasses, rscores, rbboxes)
+                    
                     cv2.imwrite(self.config.save_debug_img_path+'img_'+str(output_count)+'.png',img)
                 
                 unique, counts = np.unique(rclasses, return_counts=True)
@@ -84,7 +93,7 @@ class LabelVideo():
 
 
             self.ssd_detector.cap.release()
-            IPython.embed()
+            
             return trajectory
 
 
@@ -97,7 +106,13 @@ class LabelVideo():
 
                 if self.cropper.check_is_valid(x_min,x_max,y_min,y_max):
 
-                    point = ((x_min+x_max)/2.0,y_max, 'car',self.t)
+                    ###CHECK IF POINT IS VALID
+                    if self.init_labeler.stop_for_label:
+                        if self.init_labelr.get_point() == i:
+                            point = ((x_min+x_max)/2.0,y_max, 'car',self.t,'initial_state')
+                    else:
+                        point = ((x_min+x_max)/2.0,y_max, 'car',self.t,'not_initial_state')
+
                     frame.append(point)
                 else:
                     print "FOUND PARKED CAR"

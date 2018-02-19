@@ -28,6 +28,19 @@ class Homography():
 
         self.vz_debug = vz_debug
 
+    def determine_lane(self,point):
+
+        for i in range(len(self.config.lanes)): 
+
+            lane = self.config.lanes[i]
+
+            if lane.contains_point(point):
+                side = lane.side_of_road(point)
+                return {'lane_index':i, 'road_side':side}
+
+            
+        return None
+
     def transform_trajectory(self,trajectory):
         tf_traj = []
         for frame in trajectory:
@@ -41,7 +54,11 @@ class Homography():
                 # tx = tx * self.config.sim_scale[0]
                 # ty = ty * self.config.sim_scale[1]
 
-                new_obj = (tx,ty,cls_label,t)
+                pose = np.array([tx,ty])
+
+                new_obj = {'pose':pose,'class_label':cls_label,
+                    'timestep':t,
+                    'lane':self.determine_lane(pose)}
                 new_frame.append(new_obj)
 
             tf_traj.append(new_frame)
@@ -57,8 +74,7 @@ class Homography():
                
             tx, ty = self.tf_mat.inverse(np.array((x, y)))[0]
 
-            print "ORIGINAL POINT ",x," ",y
-            print "PROJECTED POINT ",tx," ",ty
+           
 
     def test_camera_point(self,trajectory):
       

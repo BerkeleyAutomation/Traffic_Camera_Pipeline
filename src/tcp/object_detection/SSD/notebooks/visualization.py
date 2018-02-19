@@ -83,7 +83,7 @@ def bboxes_draw_on_img(img, classes, scores, bboxes, colors, thickness=2):
 # =========================================================================== #
 # Matplotlib show...
 # =========================================================================== #
-def plt_bboxes(img, classes, scores, bboxes, figsize=(10,10), linewidth=1.5):
+def plt_bboxes(img, classes, scores, bboxes,cropper = None, figsize=(10,10), linewidth=1.5):
     """Visualize bounding boxes. Largely inspired by SSD-MXNET!
     """
     fig = plt.figure(figsize=figsize)
@@ -97,18 +97,21 @@ def plt_bboxes(img, classes, scores, bboxes, figsize=(10,10), linewidth=1.5):
             score = scores[i]
             if cls_id not in colors:
                 colors[cls_id] = (random.random(), random.random(), random.random())
-            xmin = int(bboxes[i, 0] * height)
-            ymin = int(bboxes[i, 1] * width)
-            xmax = int(bboxes[i, 2] * height)
-            ymax = int(bboxes[i, 3] * width)
-            rect = plt.Rectangle((xmin, ymin), xmax - xmin,
-                                 ymax - ymin, fill=False,
-                                 edgecolor=colors[cls_id],
-                                 linewidth=linewidth)
-            plt.gca().add_patch(rect)
-            class_name = str(cls_id)
-            plt.gca().text(xmin, ymin - 2,
-                           '{:s} | {:.3f}'.format(class_name, score),
-                           bbox=dict(facecolor=colors[cls_id], alpha=0.5),
-                           fontsize=12, color='white')
+
+            x_min,y_min,x_max,y_max = bboxes[i,:]
+            if self.cropper.check_is_valid(x_min,y_min,x_max,y_max):
+                xmin = int(bboxes[i, 0] * height)
+                ymin = int(bboxes[i, 1] * width)
+                xmax = int(bboxes[i, 2] * height)
+                ymax = int(bboxes[i, 3] * width)
+                rect = plt.Rectangle((xmin, ymin), xmax - xmin,
+                                     ymax - ymin, fill=False,
+                                     edgecolor=colors[cls_id],
+                                     linewidth=linewidth)
+                plt.gca().add_patch(rect)
+                class_name = str(cls_id)
+                plt.gca().text(xmin, ymin - 2,
+                               '{:s} | {:.3f}'.format(class_name, score),
+                               bbox=dict(facecolor=colors[cls_id], alpha=0.5),
+                               fontsize=12, color='white')
     plt.show()

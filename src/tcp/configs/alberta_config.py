@@ -1,5 +1,8 @@
 import os
 import numpy as np
+
+from gym_urbandriving.assets import Terrain, Lane, Street, Sidewalk,\
+    Pedestrian, Car, TrafficLight
 #
 # path and dataset parameter
 #
@@ -44,3 +47,15 @@ class Config(object):
 
         self.use_pedestrian = False
         self.save_images = True
+
+        ####FILTERING#######
+        self.time_limit = 20
+
+
+        #######LANES######
+        #######NSEW########
+        self.lanes = [Lane(450, 200, 400, 100, angle=-(np.pi/2)),
+                    Lane(550, 800, 400, 100, angle=(np.pi/2)),
+                    Lane(800, 450, 400, 100, angle=-np.pi),
+                    Lane(200, 550, 400, 100)]
+

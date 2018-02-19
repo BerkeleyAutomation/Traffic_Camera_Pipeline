@@ -27,6 +27,8 @@ iterative_filter = IterativeFiltering(cnfg)
 ###GET VIDEOS
 videos = glob.glob(VIDEO_FILE)
 
+
+
 ###LABEL VIDEOS
 camera_view_trajectories = []
 # IPython.embed()
@@ -35,9 +37,9 @@ camera_view_trajectories = []
 # 	camera_view_trajectory = vl.label_video(video)
 # 	camera_view_trajectories.append(camera_view_trajectory)
 
-camera_view_trajectory = vl.label_video(videos[0])
+camera_view_trajectory = vl.label_video(videos[11],output_limit = 1000)
 
-pickle.dump(camera_view_trajectory,open('test.p','wb'))
+pickle.dump(camera_view_trajectory,open('test_hard.p','wb'))
 
 
 

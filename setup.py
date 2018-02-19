@@ -10,5 +10,5 @@ setup(name='tcp',
       author='Jim Ren',
       author_email='jim.x.ren@berkeley.edu',
       package_dir = {'': 'src'},
-      packages=['tcp', 'tcp', 'tcp.object_detection','tcp.streaming','tcp.registration', 'tcp.configs'],
+      packages=['tcp', 'tcp', 'tcp.object_detection','tcp.streaming','tcp.registration', 'tcp.configs','tcp.utils'],
      )
