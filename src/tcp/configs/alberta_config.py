@@ -12,7 +12,7 @@ class Config(object):
     def __init__(self):
         ###STREAMING####
         self.STREAM_OUTPUT_SEGMENT_TIME_LIMIT = 60  # approximate length of video segments in seconds
-        self.STREAM_OUTPUT_DIR_SIZE_LIMIT = 1e9     # maximum size limit for downloaded video in bytes
+        self.STREAM_OUTPUT_DIR_SIZE_LIMIT = 1e10    # maximum size limit for downloaded video in bytes
 
         self.check_point_path = 'Checkpoints/VGG_VOC0712_SSD_300x300_ft_iter_120000.ckpt'
         self.video_root_dir = 'Train_Videos'
@@ -35,6 +35,10 @@ class Config(object):
         self.traffic_light_threshold = 100  # any pixel with lightness in HLS color space below threadhold will be set to 0
         self.traffic_light_bboxes = [(665, 244, 678, 280),  # (xmin, ymin, xmax, ymax) of the bounding box
                                      (690, 245, 702, 278)]
+
+        self.pedestrian_light_thresholds = (30, 160)  # any pixel with lightness in HLS color space outside the threadhold will be set to 0
+        self.pedestrian_light_zscore = 1.0  # zscore for red channel in RGB distribution above which the light would be detected as red
+        self.pedestrian_light_bboxes = [(1220, 306, 1236, 318)]  # (xmin, ymin, xmax, ymax) of the bounding box
 
         self.sim_scale = [1.04,1.10]
 
