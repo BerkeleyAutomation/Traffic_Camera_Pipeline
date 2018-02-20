@@ -7,26 +7,46 @@ from tcp.utils.utils import compute_angle,measure_probability
 class Trajectory():
 
 
-    def __init__(self, obj):
+    def __init__(self, initial_pose,config):
+
+      '''
+      Initialize trajectory 
+
+      Parameters
+      -----------
+      initial_pose: dict
+      data structure for pose class
+
+      config: Config
+      configuration class for traffic intersection 
+
+      
+      '''
 
 
-      self.initial_time_step = obj['timestep']
-      self.class_label = obj['class_label']
-      self.list_of_states = []
-      self.index = -1
-      self.proposal_states = [obj]
+      self.initial_time_step = initial_pose['timestep']
+      self.class_label = initial_pose['class_label']
+      self.list_of_states = [initial_pose]
+      self.past_angle = self.compute_original_angle()
+      self.config = config
+
       self.still_on = True
 
-      self.cov = np.array([[ 6.96906626,  1.93169669, -0.1744157 ],
-                           [ 1.93169669,  6.26641719, -0.55359298],
-                           [-0.1744157,  -0.55359298,  1.91510572]])
-
-      # self.cov = np.array([[ 0.396906626,  1.93169669, -0.1744157 ],
-      #                      [ 1.93169669,  7.46641719, -0.55359298],
-      #                      [-0.1744157,  -0.55359298,  3.391510572]])
+      self.cov = np.array([[ 6.0,  0.0, 0.0],
+                           [ 0.0,  6.0, 0.0],
+                           [0.0,  0.0,  1.91510572]])
 
 
     def get_next_state(self):
+      '''
+        Return the pose for the last state of the trajectory
+        
+        Return
+        ---------
+        np.array, size 2 for (x,y) pose 
+        bool, True if the list isn't empty
+
+      '''
 
       if len(self.list_of_states) == 0:
         return None,False
@@ -36,139 +56,129 @@ class Trajectory():
       return state['pose'],True
 
 
+    def compute_original_angle(self):
+        '''
+        Checks the lane of the first state to return the angle that corresponds it to 
+        driving straight along the direction of the lane
+
+        Return
+        ---------
+        float, current angle range [-pi,pi]
+
+        '''
+      
+
+        lane = self.list_of_states[0]['lane']
+
+        if lane['lane_index'] == 0:
+          return np.pi/2
+
+        elif lane['lane_index'] == 1:
+          return -np.pi/2
+
+        elif lane['lane_index'] == 2:
+          return np.pi
+
+        elif lane['lane_index'] == 3:
+          return 0.0
+
+
+
     def return_last_state_pos(self):
+        '''
+        Returns last state's pose
+
+        Returns
+        ---------
+        np.array, size 2 for (x,y) pose 
+
+        '''
 
         state = self.list_of_states[-1]
         return state['pose']
 
-    def return_proposal_state_pos(self,indx):
-        
-        state = self.proposal_states[indx]
-        return state['pose']
-
-    def return_first_state_pos(self):
-
-        state = self.list_of_states[0]
-        return state['pose']
-
-
 
     def append_to_trajectory(self,datum):
+        '''
+        Append new pose to trajectory and updates the past angle to have
+        the angle computed in compute_probability
+        '''
+
 
         self.list_of_states.append(datum)
+        self.past_angle = self.curr_angle
 
 
-    def lane_matches_end_point(self,obj):
+    def not_valid(self,current_timestop):
+        '''
+        Checks if the current trajectory has been updated in a while, 
+        if it hasn't marks the trajectory as complete. 
 
-        end_lane = self.list_of_states[-1]['lane']
+        Parameters
+        ----------
+        current_timestep: int
+          the current timestep of the traffic camera
 
-        if end_lane == None:
-          return True
+        Returns
+        ------------
+        bool, True if the trajectory is valid and False if not. 
+        '''
 
-        lane = obj['lane']
-
-        if (['lane_index'] == end_lane['lane_index']):
-          if (lane['road_side'] == end_lane['road_side']):
-            return True
-
-        return False
-
-    def compute_current_angle(self,indx):
-
-        if len(self.list_of_states) < 1: 
-
-          lane = self.proposal_states[indx]['lane']
-
-          if lane['lane_index'] == 0:
-            return np.pi/2
-
-          elif lane['lane_index'] == 1:
-            return -np.pi/2
-
-          elif lane['lane_index'] == 2:
-            return np.pi
-
-          elif lane['lane_index'] == 3:
-            return 0.0
-
-        else:
-
-          pos = self.return_proposal_state_pos(indx)
-          pos_b = self.return_last_state_pos()
-
-          angle = compute_angle(pos,pos_b)
-
-          return angle
-
-    def select_proposal_state(self,index):
-
-        datum = copy.deepcopy(self.proposal_states[index])
-       
-        self.list_of_states.append(datum)
-
-    def add_proposal_state(self,datum):
 
         last_state = self.list_of_states[-1]
 
-        if datum['timestep'] - last_state['timestep'] > 50:
-          self.still_on = False
-          return
-       
-        self.proposal_states.append(datum)
+        if current_timestop - last_state['timestep'] > self.config.time_limit:
+            return True
 
-    def clear_proposal_states(self):
-        self.proposal_states = []
+        return False
+          
 
-    def compute_new_angle(self,state,indx):
+    def compute_new_angle(self):
+        '''
+        Compute the current angle of the trajectories, with respect 
+        to the evaluated state. 
 
-        pos = self.return_proposal_state_pos(indx)
+        Returns
+        ------------
+        float, current angle in range [-pi,pi] 
+        '''
 
-        vector = state['pose'][0] - pos[0],state['pose'][1]-pos[1]
 
-        angle = compute_angle(state['pose'],pos)
+        pos = self.return_last_state_pos()
+
+        angle = compute_angle(self.curr_state,pos)
 
         return angle
 
-    
-
-
-
 
     def compute_probability(self,state):
+        '''
+        Compute the log probability of the proposed state corresponding to this
+        trajecotry 
 
-        ####ADD IN LENGHT AND CURRENT ANGLE
+        Returns
+        ------------
+        float, range [-inf,0] where 0 corrresponds to more probable 
+        '''
+        
 
-        best_prob = -1000000000
-        best_prob_indx = -1
-        for i in range(len(self.proposal_states)):
-          angle = self.compute_current_angle(i)
+        pos = self.return_last_state_pos()
+        self.curr_state = [state['pose'][0],state['pose'][1]]
 
-          if len(self.list_of_states) < 1:
-            pos = self.return_proposal_state_pos(i)
-          else:
-            pos = self.return_last_state_pos()
+        curr_angle = self.compute_new_angle()
+        
+        mean = np.array([pos[0],pos[1],self.past_angle])        
+        state_full = np.array([self.curr_state[0],self.curr_state[1],curr_angle])
 
-          mean = np.array([pos[0],pos[1],angle])
+       
+        var = measure_probability(self.cov,mean,state_full)
+       
 
-          curr_angle = self.compute_new_angle(state,i)
-          state_full = np.array([state['pose'][0],state['pose'][1],curr_angle])
-
-         
-          var = measure_probability(self.cov,mean,state_full)
-
-
-          if len(self.list_of_states) < 1: 
-            prob_proposal =  var
-          else:    
-            prob_proposal =  0.001*var
+        self.curr_angle = curr_angle
+        
 
 
-          if prob_proposal > best_prob:
-            best_prob = prob_proposal
-            best_prob_indx = i
-
-        return best_prob,best_prob_indx
-
+        return var
 
 
 

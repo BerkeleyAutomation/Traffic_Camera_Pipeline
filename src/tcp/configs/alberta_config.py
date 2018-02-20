@@ -45,7 +45,11 @@ class Config(object):
         self.save_images = True
 
         ####FILTERING#######
-        self.time_limit = 20
+        self.time_limit = 50
+
+        self.vz_time_horizon = 500
+
+
 
 
         #######LANES######
