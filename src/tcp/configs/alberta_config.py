@@ -33,9 +33,9 @@ class Config(object):
                                [600, 600],
                                [600, 400]])
 
-        self.alberta_img_dim = [1280,720]
+        self.alberta_img_dim = [1280, 720]
 
-        self.init_labeler_pickle_path = 'InitLabeler_pickles/alberta_init_labeler.pkl'
+        self.init_labeler_pickle_path = 'InitLabeler_pickles/alberta_cam_original_2017-10-26_16-33-45_init_labeler.pkl'
 
         self.traffic_light_threshold = 100  # any pixel with lightness in HLS color space below threadhold will be set to 0
         self.traffic_light_bboxes = [(665, 244, 678, 280),  # (xmin, ymin, xmax, ymax) of the bounding box
