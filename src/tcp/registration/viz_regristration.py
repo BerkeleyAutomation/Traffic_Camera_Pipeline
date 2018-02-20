@@ -7,6 +7,7 @@ import pickle
 import skimage.transform
 import cv2
 import IPython
+from random import shuffle
 
 from gym_urbandriving.agents import KeyboardAgent, AccelAgent, NullAgent, TrafficLightAgent, RRTAgent
 from gym_urbandriving.assets import Car, TrafficLight
@@ -18,22 +19,38 @@ import colorlover as cl
 class VizRegristration():
 
     def __init__(self,cnfg):
+        ''' 
+        Initialize the VizRegristation Class
+
+        Parameters
+        ----------
+        cnfig: Config
+        configuration class for traffic intersection
+
+        '''
 
         self.config = cnfg
 
 
     def load_frames(self):
+        '''
+        Load label images to be plotted 
+        '''
         self.imgs = []
-        for i in range(1,500):
+        for i in range(1,self.config.vz_time_horizon):
             img = cv2.imread(self.config.save_debug_img_path+'img_'+str(i)+'.png')
             self.imgs.append(img)
 
-    def initalize_simulator(self,ncars,nped):
+    def initalize_simulator(self):
+
+        '''
+        Initializes the simulator
+        '''
 
         self.vis = uds.PyGameVisualizer((800, 800))
 
-        # Create a simple-intersection state, with 4 cars, no pedestrians, and traffic lights
-        self.init_state = uds.state.SimpleIntersectionState(ncars=ncars, nped=nped, traffic_lights=True)
+        # Create a simple-intersection state, with no agents
+        self.init_state = uds.state.SimpleIntersectionState(ncars=0, nped=0, traffic_lights=True)
 
         # Create the world environment initialized to the starting state
         # Specify the max time the environment will run to 500
@@ -53,6 +70,15 @@ class VizRegristration():
 
 
     def compute_color_template(self,num_trajectories):
+        ''''
+        Returns a spectrum of colors that intrepret between two different spectrums 
+        The goal is to have unique color for each trajectories
+
+        Parameter
+        ------------
+        num_trajectories: int
+        Number of Trajectories to plot 
+        '''
 
         color_r = np.linspace(255,0,num = num_trajectories)
         color_g = np.linspace(126,0,num = num_trajectories)
@@ -67,13 +93,26 @@ class VizRegristration():
 
             color_template.append((c_r,c_g,c_b))
        
+        shuffle(color_template)
         return color_template
 
 
 
-    def visualize_trajectory_dots(self,trajectories):
-        self.initalize_simulator(0,0)
+    def visualize_trajectory_dots(self,trajectories,plot_traffic_images = False):
+        '''
+        Visualize the sperated trajecotries in the simulator and can also visualize the matching images
 
+        Parameter
+        ------------
+        trajectories: list of Trajectory 
+        A list of Trajectory Class
+
+        plot_traffic_images: bool
+        True if the images from the traffic cam should be shown alongside the simulator 
+        '''
+        self.initalize_simulator()
+        if plot_traffic_images:
+            self.load_frames()
         
 
         active_trajectories = []
@@ -82,8 +121,7 @@ class VizRegristration():
         color_template = self.compute_color_template(len(trajectories))
 
         color_index = 0
-        for t in range(500):
-            print "T ",t
+        for t in range(self.config.vz_time_horizon):
 
             for traj_index in range(len(trajectories)):
 
@@ -107,17 +145,24 @@ class VizRegristration():
                     way_points.append(w_p)
 
 
+            ###Render Images on Simulator and Traffic Camera 
             self.env._render(traffic_trajectories = way_points)
-           
-            cv2.imshow('img',self.imgs[t])
-            cv2.waitKey(30)
-            t+=1
+            
+            if plot_traffic_images:
+                cv2.imshow('img',self.imgs[t])
+                cv2.waitKey(30)
+                t+=1
 
 
         return
 
     def visualize_homography_points(self):
-        self.initalize_simulator(0,0)
+        ''' 
+        Plot the correspnding homography ponts
+        Assumes load_frames has been called
+        '''
+
+        self.initalize_simulator()
         img = self.imgs[0]
 
         for i in range(3):
@@ -137,54 +182,5 @@ class VizRegristration():
             cv2.imshow('img',img)
             cv2.waitKey(30)
 
-    def visualize_simulator_point(self,x,y):
-        self.initalize_simulator(0,0)
 
-        IPython.embed()
-        
-        waypoints = [[x,y]]
-        
-        self.env._render(waypoints = waypoints)     
-        cv2.imshow('img',img)
-        cv2.waitKey(30)
-
-    def visualize_camera_point(self,x,y,t):
-
-
-        img = self.imgs[t]
-
-        point = [x,y]
-
-        img[point[1]-5:point[1]+5,point[0]-5:point[0]+5,:]=255
-        
-        cv2.imshow('img',img)
-        cv2.waitKey(30)
-
-            
-		
-
-
-
-	# def visualize_trajectory_cars(self,trajectory_of_objects)
-
-	# 	agent = RRTAgent()
-	# 	for i in range(20):
-	# 		trajectory, cls = get_single_trajectory(trajectories, i)
-
-	# 		if not len(trajectory):
-	# 			break
-
-	# 		tf_trajectory = transform_trajectory(trajectory)
-	# 		init_state.dynamic_objects[0] = Car(tf_trajectory[0][0], tf_trajectory[0][1], breadcrumbs=tf_trajectory)
-	# 		env._reset(new_state=init_state)
-	# 		env._render()
-
-	# 		state = env.current_state
-	# 		while(True):
-	# 			action = agent.eval_policy(state)
-	# 			state, reward, done, info_dict = env._step(action)
-	# 			env._render()
-	# 			if not state.dynamic_objects[0].breadcrumbs:
-	# 			    break
-	# 	return
 

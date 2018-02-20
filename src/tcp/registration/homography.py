@@ -7,28 +7,52 @@ import pickle
 import skimage.transform
 import cv2
 
-from gym_urbandriving.agents import KeyboardAgent, AccelAgent, NullAgent, TrafficLightAgent, RRTAgent
-from gym_urbandriving.assets import Car, TrafficLight
+
 import IPython
 
 
 
 class Homography():
 
-    def __init__(self,config,vz_debug = None):
+    def __init__(self,config):
+
+        '''
+        Initilization for Regristration Class 
+
+        Parameters
+        -------------
+        config: Config
+        configuration class for traffic intersection 
+
+        '''
 
         self.config = config
+
         # Four corners of the interection, hard-coded in camera space
         self.corners = self.config.street_corners
         # Four corners of the intersection, hard-coded in transformed space
         self.st_corners = self.config.simulator_corners
 
+        #Computes the projected transform for the going from camera to simulator coordinate frame
         self.tf_mat = skimage.transform.ProjectiveTransform()
         self.tf_mat.estimate(self.st_corners, self.corners)
 
-        self.vz_debug = vz_debug
 
     def determine_lane(self,point):
+        '''
+        Detemines the lane the current trajectory is on 
+        both the index of the lane and the side of the road
+
+        Parameters
+        --------------
+        point: np.array([x,y])
+            The current pose of the car in x,y space
+
+        Returns
+        -------------
+        dict, containing the current index and road side
+
+        '''
 
         for i in range(len(self.config.lanes)): 
 
@@ -42,48 +66,78 @@ class Homography():
         return None
 
     def transform_trajectory(self,trajectory):
+
+        '''
+        Takes in a trajectory class and converts it to the simulator's frame of reference
+        additionally identifies the current lanes
+
+        Parameters
+        ---------------
+        trajectories: a list of tuple frames
+        A list of frames, which is a list state tuples for each timestep
+
+        Returns
+        ---------------
+        A list of frames, which is a list state dictionaries for each timestep
+        '''
+
+
+
         tf_traj = []
         for frame in trajectory:
+
             new_frame = []
+
             for obj in frame:
-                x,y,cls_label,t = obj
+
+                x,y,cls_label,t,initial_state = obj
 
                 x, y = self.config.alberta_img_dim[0] * x, self.config.alberta_img_dim[1]* y
 
                 tx, ty = self.tf_mat.inverse(np.array((x, y)))[0]
-                # tx = tx * self.config.sim_scale[0]
-                # ty = ty * self.config.sim_scale[1]
-
+                
                 pose = np.array([tx,ty])
 
                 new_obj = {'pose':pose,'class_label':cls_label,
                     'timestep':t,
-                    'lane':self.determine_lane(pose)}
+                    'lane':self.determine_lane(pose),
+                    'initial_state':initial_state}
+
                 new_frame.append(new_obj)
 
             tf_traj.append(new_frame)
 
         return tf_traj
 
-    def test_homography(self):
-      
-        for i in range(4):
 
-            point = self.config.street_corners[i,:]
-            x,y = point
-               
-            tx, ty = self.tf_mat.inverse(np.array((x, y)))[0]
 
+##########TEST CASES FOR HOMOGRAPHY CLASS 
+
+def test_homography(hm):
+    ''''
+    Tests if the fitted matrix matches the training point
+    '''
+  
+    for i in range(4):
+
+        point = hm.config.street_corners[i,:]
+        x,y = point
            
+        tx, ty = hm.tf_mat.inverse(np.array((x, y)))[0]
 
-    def test_camera_point(self,trajectory):
-      
-        for frame in trajectory:
-            for obj in frame:
-                x,y,cls_label,t = obj
+       
 
-                x, y = int(self.config.alberta_img_dim[0] * x), int(self.config.alberta_img_dim[1]* y)
-                self.vz_debug.visualize_camera_point(x,y,t)
+def test_camera_point(hm,trajectory):
+    ''''
+    Plots a trajectory on the driving simulator 
+    '''
+  
+    for frame in trajectory:
+        for obj in frame:
+            x,y,cls_label,t = obj
+
+            x, y = int(hm.config.alberta_img_dim[0] * x), int(hm.config.alberta_img_dim[1]* y)
+            hm.vz_debug.visualize_camera_point(x,y,t)
                
             
 
