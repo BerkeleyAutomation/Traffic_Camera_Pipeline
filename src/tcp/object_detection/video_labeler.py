@@ -39,16 +39,16 @@ class LabelVideo():
             all_rbboxes = []
             while self.ssd_detector.cap.isOpened():
                 ret, frame = self.ssd_detector.cap.read()
+                if frame is None:
+                    break
                 rclasses, rscores, rbboxes = self.ssd_detector.get_bounding_box(frame)
                 all_rclasses.append(rclasses)
                 all_rscores.append(rscores)
                 all_rbboxes.append(rbboxes)
+            self.ssd_detector.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
 
             ### CALL INITIAL LABELER ###
             self.init_labeler = InitLabeler(self.config, self.ssd_detector.cap, all_rbboxes, all_rclasses)
-
-            # DEBUG SHORT-STOP return
-            return
 
             output_count = 0
             frame_skip = 0

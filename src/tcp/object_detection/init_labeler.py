@@ -19,11 +19,11 @@ def draw_bbox(ax, bbox, label, im_size, color=None, picker=True, traj_label=None
     height = (bbox[3] - bbox[1]) * im_size[1]
     
     if color is None:
-        color = 'gray'
+        color = 'magenta'
         linestyle = 'dashed'
     else:
         linestyle = 'solid'
-    # patches.Rectangle(top_left_xy, width, height)
+    # patches.Rectangle((xmin, ymin), width, height)
     rect = patches.Rectangle((bbox[0] * im_size[0], bbox[1] * im_size[1]), width, height,
                              linewidth=1.5, linestyle=linestyle, label=label,
                              edgecolor=color, facecolor='none', picker=picker)
@@ -88,7 +88,6 @@ class InitLabeler():
             ax.set_title('Trajectory #%d Frame: %d/%d' % (self.trajectory_label, self.frame_i, self.num_frames - 1))
             
             for i, bbox in enumerate(bboxes):
-                bbox = YX_to_XY(bbox)
                 midpoint = get_midpoint(*bbox)
                 color = None
                 traj_label = None
