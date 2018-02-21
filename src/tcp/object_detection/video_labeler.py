@@ -42,6 +42,10 @@ class LabelVideo():
                 if frame is None:
                     break
                 rclasses, rscores, rbboxes = self.ssd_detector.get_bounding_box(frame)
+
+                # Filter bboxes with cropper mask
+                rbboxes = [bbox for bbox in rbboxes if self.cropper.check_is_valid(*bbox)]
+
                 all_rclasses.append(rclasses)
                 all_rscores.append(rscores)
                 all_rbboxes.append(rbboxes)
@@ -115,9 +119,9 @@ class LabelVideo():
         frame = []
         for i in range(rclasses.shape[0]):
             if rclasses[i] == 7:
-                x_min,y_min,x_max,y_max = rbboxes[i,:]
+                x_min, y_min, x_max, y_max = rbboxes[i,:]
 
-                if self.cropper.check_is_valid(x_min,x_max,y_min,y_max):
+                if self.cropper.check_is_valid(x_min, y_min, x_max, y_max):
 
                     ###CHECK IF POINT IS VALID
                     if self.init_labeler.has_init_label(frame_i):
