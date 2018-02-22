@@ -83,7 +83,7 @@ class LabelVideo():
             pickle.dump(all_rbboxes, open('Debug_Pickles/%s_bboxes.cpkl' % video_name, 'w+'))
 
         ### CALL INITIAL LABELER ###
-        self.init_labeler = InitLabeler(self.config, self.ssd_detector.cap, all_rbboxes, all_rclasses,
+        self.init_labeler = InitLabeler_OpenCV(self.config, self.ssd_detector.cap, all_rbboxes, all_rclasses,
                                         init_labeler_pickle_path='Debug_Pickles/%s_init_labels.cpkl' % video_name,
                                         cache_frames=False)
 
