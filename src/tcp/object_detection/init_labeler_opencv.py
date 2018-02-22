@@ -130,6 +130,7 @@ class InitLabeler_OpenCV():
 
         if cache_frames:
             cached_frames = []
+            print 'Caching frames into memory...'
             while self.cap.isOpened():
                 ret, frame = self.cap.read()
                 if frame is None:
@@ -168,7 +169,7 @@ class InitLabeler_OpenCV():
                 if self.pause:
                     key = cv2.waitKeyEx(0)
                 else:
-                    key = cv2.waitKeyEx(1)
+                    key = cv2.waitKeyEx(33)
                 self.cv2_on_key_press(key)
 
                 self.frame_i += 1
