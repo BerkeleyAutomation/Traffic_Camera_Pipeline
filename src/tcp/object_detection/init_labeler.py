@@ -43,7 +43,7 @@ def get_midpoint(xmin, ymin, xmax, ymax):
 
 class InitLabeler():
 
-    def __init__(self, config, cap, all_rbboxes, all_rclasses):
+    def __init__(self, config, cap, all_rbboxes, all_rclasses, init_labeler_pickle_path=None):
         assert len(all_rbboxes) == len(all_rclasses), \
             'Number of frames in list of bboxes (%d) and list of classes (%d) mismatch' % \
             (len(all_rbboxes), len(all_rclasses))
@@ -52,6 +52,7 @@ class InitLabeler():
         self.cap = cap
         self.all_rbboxes = all_rbboxes
         self.all_rclasses = all_rclasses
+        self.init_labeler_pickle_path = init_labeler_pickle_path
 
         self.img_size = (self.cap.get(cv2.CAP_PROP_FRAME_WIDTH), 
                          self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -60,6 +61,7 @@ class InitLabeler():
         self.trajectory_label = 0
         self.frame_i = 0
         self.quit_loop = False
+        self.pause = False
         self.num_frames = len(self.all_rbboxes)
        
         plt.ioff()
@@ -72,7 +74,7 @@ class InitLabeler():
         plt.tight_layout()
         fig.show()
 
-        self.trajectories = self.load_trajectories(self.config.init_labeler_pickle_path)
+        self.trajectories = self.load_trajectories()
 
         while not self.quit_loop:
             self.cap.set(cv2.CAP_PROP_POS_FRAMES, self.frame_i)
@@ -97,16 +99,14 @@ class InitLabeler():
                         traj_label = tmp_traj
                 draw_bbox(ax, bbox, classes[i], self.img_size, color=color, picker=(color is None), traj_label=traj_label)
             
-            fig.waitforbuttonpress(timeout=-1)
+            if self.pause:
+                fig.waitforbuttonpress(timeout=-1)
+            else:
+                fig.waitforbuttonpress(timeout=0.001)
             ax.clear()
             plt.draw()
             self.frame_i += 1
             self.frame_i = min(self.num_frames - 1, self.frame_i)
-            # if self.frame_i >= self.num_frames:
-            #     pickle.dump(self.trajectories, open(self.config.init_labeler_pickle_path, 'w+'))
-            #     print 'Wrote trajectory %d to %s' % (self.trajectory_label, self.config.init_labeler_pickle_path)
-            #     self.trajectory_label += 1
-            #     self.frame_i = 0
             if self.quit_loop:
                 break
         ax.clear()
@@ -119,7 +119,7 @@ class InitLabeler():
     Each element of TRAJECTORIES is a list of tuples (x, y, detection_class, trajectory_label).
     Each tuple from above represents one bounding box in the frame.
     """
-    def load_trajectories(self, trajectories_path):
+    def load_trajectories(self):
         try:
             self.trajectories = pickle.load(open(self.config.init_labeler_pickle_path, 'r'))
             print '"%s" loaded.' % self.config.init_labeler_pickle_path
@@ -165,13 +165,18 @@ class InitLabeler():
             self.frame_i -= 100
             self.frame_i = max(0, self.frame_i)
         elif event.key == 'w':
-            init_labeler_pickle_dir = os.path.dirname(self.config.init_labeler_pickle_path)
-            if not os.path.exists(init_labeler_pickle_dir):
-                os.makedirs(init_labeler_pickle_dir)
-            pickle.dump(self.trajectories, open(self.config.init_labeler_pickle_path, 'w+'))
-            print 'Written trajectories to %s.' % self.config.init_labeler_pickle_path
+            if self.init_labeler_pickle_path is None:
+                print 'Unable to save: init_labeler_pickle_path not provided.'
+            else:
+                init_labeler_pickle_dir = os.path.dirname(self.init_labeler_pickle_path)
+                if not os.path.exists(init_labeler_pickle_dir):
+                    os.makedirs(init_labeler_pickle_dir)
+                pickle.dump(self.trajectories, open(self.init_labeler_pickle_path, 'w+'))
+                print 'Written trajectories to %s.' % self.init_labeler_pickle_path
         elif event.key == 'p':
             print self.trajectories[self.frame_i]
+        elif event.key == ' ':
+            self.pause = not self.pause
             
         self.frame_i -= 1
 
