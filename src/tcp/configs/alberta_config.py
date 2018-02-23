@@ -20,7 +20,7 @@ class Config(object):
         self.check_point_path = 'Checkpoints/VGG_VOC0712_SSD_300x300_ft_iter_120000.ckpt'
         self.video_root_dir = 'Train_Videos'
         self.save_debug_img_path = 'Debug_Imgs/'
-        self.crop_image_path = 'crop_image.png'
+        self.crop_image_path = 'alberta_crop_image.png'
 
         ####REGISTRATION####
         self.street_corners = np.array([[765, 385],

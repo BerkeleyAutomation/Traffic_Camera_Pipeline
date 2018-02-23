@@ -4,7 +4,7 @@ import cProfile
 import time
 import numpy as np
 import pickle
-import skimage.transform
+from skimage.transform import ProjectiveTransform, warp
 import cv2
 
 
@@ -34,7 +34,7 @@ class Homography():
         self.st_corners = self.config.simulator_corners
 
         #Computes the projected transform for the going from camera to simulator coordinate frame
-        self.tf_mat = skimage.transform.ProjectiveTransform()
+        self.tf_mat = ProjectiveTransform()
         self.tf_mat.estimate(self.st_corners, self.corners)
 
 
@@ -134,3 +134,10 @@ def test_camera_point(hm, trajectory):
             x = int(hm.config.alberta_img_dim[0] * obj_dict['x']) 
             y = int(hm.config.alberta_img_dim[1] * obj_dict['y'])
             hm.vz_debug.visualize_camera_point(x, y, obj_dict['t'])
+
+def test_homography_on_img(hm, img):
+    img_warped = cv2.warpPerspective(img, hm.tf_mat._inv_matrix, (img.shape[1], img.shape[0]))
+    cv2.imshow('Test Homography', img_warped)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    return img_warped
