@@ -8,37 +8,36 @@ class Trajectory():
 
 
     def __init__(self, initial_pose,config):
+        '''
+        Initialize trajectory 
 
-      '''
-      Initialize trajectory 
+        Parameters
+        -----------
+        initial_pose: dict
+        data structure for pose class
 
-      Parameters
-      -----------
-      initial_pose: dict
-      data structure for pose class
-
-      config: Config
-      configuration class for traffic intersection 
-
-      
-      '''
+        config: Config
+        configuration class for traffic intersection 
 
 
-      self.initial_time_step = initial_pose['timestep']
-      self.class_label = initial_pose['class_label']
-      self.list_of_states = [initial_pose]
-      self.past_angle = self.compute_original_angle()
-      self.config = config
+        '''
 
-      self.still_on = True
 
-      self.cov = np.array([[ 6.0,  0.0, 0.0],
+        self.initial_time_step = initial_pose['timestep']
+        self.class_label = initial_pose['class_label']
+        self.list_of_states = [initial_pose]
+        self.past_angle = self.compute_original_angle()
+        self.config = config
+
+        self.still_on = True
+
+        self.cov = np.array([[ 6.0,  0.0, 0.0],
                            [ 0.0,  6.0, 0.0],
                            [0.0,  0.0,  1.91510572]])
 
 
     def get_next_state(self):
-      '''
+        '''
         Return the pose for the last state of the trajectory
         
         Return
@@ -46,14 +45,14 @@ class Trajectory():
         np.array, size 2 for (x,y) pose 
         bool, True if the list isn't empty
 
-      '''
+        '''
 
-      if len(self.list_of_states) == 0:
-        return None,False
+        if len(self.list_of_states) == 0:
+            return None, False
 
-      state = self.list_of_states.pop(0)
+        state = self.list_of_states.pop(0)
 
-      return state['pose'],True
+        return state['pose'],True
 
 
     def compute_original_angle(self):
@@ -69,19 +68,20 @@ class Trajectory():
       
 
         lane = self.list_of_states[0]['lane']
+        if lane is None:
+            return 0.0
 
         if lane['lane_index'] == 0:
-          return np.pi/2
+            return np.pi/2
 
         elif lane['lane_index'] == 1:
-          return -np.pi/2
+            return -np.pi/2
 
         elif lane['lane_index'] == 2:
-          return np.pi
+            return np.pi
 
         elif lane['lane_index'] == 3:
-          return 0.0
-
+            return 0.0
 
 
     def return_last_state_pos(self):

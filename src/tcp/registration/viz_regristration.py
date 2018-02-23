@@ -1,3 +1,4 @@
+import sys, os
 import gym
 import gym_urbandriving as uds
 import cProfile
@@ -9,7 +10,7 @@ import cv2
 import IPython
 from random import shuffle
 
-from gym_urbandriving.agents import KeyboardAgent, AccelAgent, NullAgent, TrafficLightAgent, RRTAgent
+from gym_urbandriving.agents import KeyboardAgent, AccelAgent, NullAgent, TrafficLightAgent#, RRTAgent
 from gym_urbandriving.assets import Car, TrafficLight
 
 import colorlover as cl
@@ -32,13 +33,18 @@ class VizRegristration():
         self.config = cnfg
 
 
-    def load_frames(self):
+    def load_frames(self, video_name):
         '''
         Load label images to be plotted 
         '''
+        if video_name is None:
+            print 'Visualizer failed to load frames. Video name not provided.'
+            return
+
         self.imgs = []
-        for i in range(1,self.config.vz_time_horizon):
-            img = cv2.imread(self.config.save_debug_img_path+'img_'+str(i)+'.png')
+        for i in range(1, self.config.vz_time_horizon):
+            debug_img_path = os.path.join(self.config.save_debug_img_path, video_name)
+            img = cv2.imread(os.path.join(debug_img_path, '%s_%07d.jpg' % (video_name, i)))
             self.imgs.append(img)
 
     def initalize_simulator(self):
@@ -98,7 +104,7 @@ class VizRegristration():
 
 
 
-    def visualize_trajectory_dots(self,trajectories,plot_traffic_images = False):
+    def visualize_trajectory_dots(self, trajectories, plot_traffic_images=False, video_name=None):
         '''
         Visualize the sperated trajecotries in the simulator and can also visualize the matching images
 
@@ -112,7 +118,7 @@ class VizRegristration():
         '''
         self.initalize_simulator()
         if plot_traffic_images:
-            self.load_frames()
+            self.load_frames(video_name)
         
 
         active_trajectories = []
