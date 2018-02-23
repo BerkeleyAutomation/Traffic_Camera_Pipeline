@@ -45,17 +45,17 @@ class LabelVideo():
         if debug_pickle:
             try:
                 all_rclasses = pickle.load(open('Debug_Pickles/%s_classes.cpkl' % video_name, 'r'))
-                print 'Loaded "Debug_Pickles/%s_classes.cpkl"' % video_name
+                print 'Loaded "Debug_Pickles/%s_classes.cpkl".' % video_name
             except IOError as e:
                 print 'Unable to load "Debug_Pickles/%s_classes.cpkl"' % video_name
             try:
                 all_rscores = pickle.load(open('Debug_Pickles/%s_scores.cpkl' % video_name, 'r'))
-                print 'Loaded "Debug_Pickles/%s_scores.cpkl"' % video_name
+                print 'Loaded "Debug_Pickles/%s_scores.cpkl".' % video_name
             except IOError as e:
                 print 'Unable to load "Debug_Pickles/%s_scores.cpkl"' % video_name
             try:
                 all_rbboxes = pickle.load(open('Debug_Pickles/%s_bboxes.cpkl' % video_name, 'r'))
-                print 'Loaded "Debug_Pickles/%s_bboxes.cpkl"' % video_name
+                print 'Loaded "Debug_Pickles/%s_bboxes.cpkl".' % video_name
             except IOError as e:
                 print 'Unable to load "Debug_Pickles/%s_bboxes.cpkl"' % video_name
 
@@ -80,9 +80,9 @@ class LabelVideo():
         if debug_pickle:
             if not os.path.exists('Debug_Pickles/'):
                 os.makedirs('Debug_Pickles/')
-            pickle.dump(all_rclasses, open('Debug_Pickles/%s_classes.cpkl.' % video_name, 'w+'))
-            pickle.dump(all_rscores, open('Debug_Pickles/%s_scores.cpkl.' % video_name, 'w+'))
-            pickle.dump(all_rbboxes, open('Debug_Pickles/%s_bboxes.cpkl.' % video_name, 'w+'))
+            pickle.dump(all_rclasses, open('Debug_Pickles/%s_classes.cpkl' % video_name, 'w+'))
+            pickle.dump(all_rscores, open('Debug_Pickles/%s_scores.cpkl' % video_name, 'w+'))
+            pickle.dump(all_rbboxes, open('Debug_Pickles/%s_bboxes.cpkl' % video_name, 'w+'))
 
         ### CALL INITIAL LABELER ###
         self.init_labeler = InitLabeler_OpenCV(self.config, self.ssd_detector.cap, all_rbboxes, all_rclasses,
