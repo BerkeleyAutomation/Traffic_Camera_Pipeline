@@ -28,7 +28,7 @@ class LabelVideo():
 
         self.ssd_detector = SSD_VGG16Detector('ssd_vgg16', self.config.check_point_path, cropper=self.cropper)
 
-    def label_video(self, video_path, output_limit=500, num_skip_frames=1, debug_pickle=False):
+    def label_video(self, video_path, output_limit=None, num_skip_frames=1, debug_pickle=False):
         video_name = os.path.splitext(os.path.basename(video_path))[0]
 
         self.ssd_detector.setStreamURL(video_path)
@@ -127,7 +127,11 @@ class LabelVideo():
             car_count = classes_counts.get(7)
 
             if frame_i % 100 == 0:
-                print "Processed frames: %d/%d " % (frame_i, len(all_rclasses))
+                if output_limit is None:
+                    total_frames = len(all_rclasses)
+                else:
+                    total_frames = min(output_limit, len(all_rclasses))
+                print "Processed frames: %d/%d " % (frame_i, total_frames)
 
             current_frame = []
 
@@ -135,7 +139,7 @@ class LabelVideo():
             ped_cords = self.get_pedestrian_cords(frame_i, rclasses, rbboxes)
 
             frame_i += 1
-            if frame_i > output_limit:
+            if output_limit is not None and frame_i > output_limit:
                 break
 
             for car_cord in car_cords:
@@ -147,6 +151,8 @@ class LabelVideo():
 
             if len(current_frame) != 0:
                 trajectory.append(current_frame)
+
+        print 'Done processing %d frames.' % (frame_i - 1)
         self.ssd_detector.cap.release()
         
         return trajectory
@@ -162,10 +168,14 @@ class LabelVideo():
         for i in range(len(rclasses)):
             if rclasses[i] == 7:
                 x_min, y_min, x_max, y_max = rbboxes[i]
+                point = {'x': (x_min + x_max) / 2.0,
+                         'y': y_max,
+                         'cls_label': 'car',
+                         't': frame_i}
                 if i in arg_init_label:
-                    point = ((x_min + x_max) / 2.0, y_max, 'car', frame_i, 'initial_state')
+                    point['is_initial_state'] = True
                 else:
-                    point = ((x_min + x_max) / 2.0, y_max, 'car', frame_i, 'not_initial_state')
+                    point['is_initial_state'] = False
                 frame.append(point)
         return frame
 
@@ -178,8 +188,10 @@ class LabelVideo():
         for i in range(len(rclasses)):
             if rclasses[i] == 15:
                 y_min, x_min, y_max, x_max = rbboxes[i]
-
-                point = ((x_min + x_max / 2.0), (y_min + y_max / 2.0), 'pedestrian', frame_i)
+                point = {'x': (x_min + x_max) / 2.0,
+                         'y': (y_min + y_max) / 2.0,
+                         'cls_label': 'pedestrian',
+                         't': frame_i}
                 frame.append(point)
 
         return frame

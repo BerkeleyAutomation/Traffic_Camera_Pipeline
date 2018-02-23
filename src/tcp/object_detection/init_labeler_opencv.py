@@ -197,7 +197,7 @@ class InitLabeler_OpenCV():
     def cv2_on_key_press(self, key):
         if key == ord('q'):
             self.quit_loop = True
-            print 'Quitting'
+            print 'Quitting init labeler GUI'
         elif key == ord('a') or key == 65364 or key == 2621440: # down
             self.trajectory_label -= 1
             self.trajectory_label = max(0, self.trajectory_label)
