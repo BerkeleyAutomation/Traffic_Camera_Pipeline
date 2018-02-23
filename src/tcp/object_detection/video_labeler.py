@@ -27,7 +27,6 @@ class LabelVideo():
         self.cropper = Cropper(self.config)
 
         self.ssd_detector = SSD_VGG16Detector('ssd_vgg16', self.config.check_point_path, cropper=self.cropper)
-        self.t = 0
 
     def label_video(self, video_path, output_limit=500, num_skip_frames=1, debug_pickle=False):
         video_name = os.path.splitext(os.path.basename(video_path))[0]
@@ -81,9 +80,9 @@ class LabelVideo():
         if debug_pickle:
             if not os.path.exists('Debug_Pickles/'):
                 os.makedirs('Debug_Pickles/')
-            pickle.dump(all_rclasses, open('Debug_Pickles/%s_classes.cpkl' % video_name, 'w+'))
-            pickle.dump(all_rscores, open('Debug_Pickles/%s_scores.cpkl' % video_name, 'w+'))
-            pickle.dump(all_rbboxes, open('Debug_Pickles/%s_bboxes.cpkl' % video_name, 'w+'))
+            pickle.dump(all_rclasses, open('Debug_Pickles/%s_classes.cpkl.' % video_name, 'w+'))
+            pickle.dump(all_rscores, open('Debug_Pickles/%s_scores.cpkl.' % video_name, 'w+'))
+            pickle.dump(all_rbboxes, open('Debug_Pickles/%s_bboxes.cpkl.' % video_name, 'w+'))
 
         ### CALL INITIAL LABELER ###
         self.init_labeler = InitLabeler_OpenCV(self.config, self.ssd_detector.cap, all_rbboxes, all_rclasses,
@@ -101,7 +100,6 @@ class LabelVideo():
         while self.ssd_detector.cap.isOpened():
             # pdb.set_trace()
             ret, frame = self.ssd_detector.cap.read()
-            self.t += 1
             if frame is None:
                 break
 
@@ -128,8 +126,8 @@ class LabelVideo():
             classes_counts = dict(zip(unique, counts))
             car_count = classes_counts.get(7)
 
-            if self.t % 100 == 0:
-                print "Processed frames: %d/%d " % (self.t, len(all_rclasses))
+            if frame_i % 100 == 0:
+                print "Processed frames: %d/%d " % (frame_i, len(all_rclasses))
 
             current_frame = []
 
