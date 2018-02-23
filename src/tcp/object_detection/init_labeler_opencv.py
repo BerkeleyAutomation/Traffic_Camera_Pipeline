@@ -187,7 +187,6 @@ class InitLabeler_OpenCV():
             bboxes = self.all_rbboxes[self.frame_i]
             for i, bbox in enumerate(bboxes):
                 if in_bbox(bbox, x, y):
-                    print 'in bbox'
                     mid_x, mid_y = get_midpoint(*bbox)
                     self.trajectories[self.frame_i].append((mid_x, mid_y, self.all_rclasses[self.frame_i][i], self.trajectory_label))
                     color = get_color(self.trajectory_label)
@@ -271,6 +270,6 @@ class InitLabeler_OpenCV():
         for mid_x, mid_y, rclass, traj_label in init_object_bboxes:
             try:
                 retval.append(frame_i_centroids.index((mid_x, mid_y)))
-            except ValueError:
+            except ValueError as e:
                 continue
         return retval
