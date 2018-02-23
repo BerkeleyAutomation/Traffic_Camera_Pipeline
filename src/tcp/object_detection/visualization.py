@@ -59,31 +59,32 @@ def draw_lines(img, lines, color=[255, 0, 0], thickness=2):
 
 
 def draw_rectangle(img, p1, p2, color=[255, 0, 0], thickness=2):
-    cv2.rectangle(img, p1[::-1], p2[::-1], color, thickness)
+    cv2.rectangle(img, p1[::], p2[::], color, thickness)
 
 
 def draw_bbox(img, bbox, shape, label, color=[255, 0, 0], thickness=2):
-    p1 = (int(bbox[0] * shape[0]), int(bbox[1] * shape[1]))
-    p2 = (int(bbox[2] * shape[0]), int(bbox[3] * shape[1]))
-    cv2.rectangle(img, p1[::-1], p2[::-1], color, thickness)
-    p1 = (p1[0]+15, p1[1])
-    cv2.putText(img, str(label), p1[::-1], cv2.FONT_HERSHEY_DUPLEX, 0.5, color, 1)
+    height, width, _ = img.shape
+    p1 = (int(bbox[0] * width), int(bbox[1] * height))
+    p2 = (int(bbox[2] * width), int(bbox[3] * height))
+    cv2.rectangle(img, p1[::], p2[::], color, thickness)
+    p1 = (p1[0], p1[1]+15)
+    cv2.putText(img, str(label), p1[::], cv2.FONT_HERSHEY_DUPLEX, 0.5, color, 1)
 
 
 def bboxes_draw_on_img(img, classes, scores, bboxes, colors, thickness=2):
-    shape = img.shape
+    height, width, _ = img.shape
     bboxes = np.array(bboxes)
     for i in range(bboxes.shape[0]):
         bbox = bboxes[i]
         color = colors[classes[i]]
         # Draw bounding box...
-        p1 = (int(bbox[0] * shape[0]), int(bbox[1] * shape[1]))
-        p2 = (int(bbox[2] * shape[0]), int(bbox[3] * shape[1]))
-        cv2.rectangle(img, p1[::-1], p2[::-1], color, thickness)
+        p1 = (int(bbox[0] * width), int(bbox[1] * height))
+        p2 = (int(bbox[2] * width), int(bbox[3] * height))
+        cv2.rectangle(img, p1[::], p2[::], color, thickness)
         # Draw text...
         s = '%s/%.3f' % (classes[i], scores[i])
-        p1 = (p1[0]-5, p1[1])
-        cv2.putText(img, s, p1[::-1], cv2.FONT_HERSHEY_DUPLEX, 0.4, color, 1)
+        p1 = (p1[0], p1[1]-5)
+        cv2.putText(img, s, p1[::], cv2.FONT_HERSHEY_DUPLEX, 0.4, color, 1)
 
 
 # =========================================================================== #
