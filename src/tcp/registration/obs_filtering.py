@@ -9,14 +9,14 @@ import cv2
 import copy
 import IPython
 import numpy.linalg as LA
-from gym_urbandriving.agents import KeyboardAgent, AccelAgent, NullAgent, TrafficLightAgent, RRTAgent
+from gym_urbandriving.agents import KeyboardAgent, AccelAgent, NullAgent, TrafficLightAgent#, RRTAgent
 from gym_urbandriving.assets import Car, TrafficLight
 from tcp.registration.trajectory import Trajectory
 
 
 class ObsFiltering():
 
-    def __init__(self,config):
+    def __init__(self, config):
         ''''
         Initializes ObsFiltering class
 
@@ -27,12 +27,10 @@ class ObsFiltering():
         '''
 
         self.config = config
-
         self.old_trajectories = []
         
 
-
-    def clear_trajectories(self,current_timestep):
+    def clear_trajectories(self, current_timestep):
         '''
         Moves the inactive trajectories (i.e. ones that haven't been updated in a while)
         to the old_trajectories list and then removes the trajectories from the current one
@@ -43,7 +41,6 @@ class ObsFiltering():
         corresponds to the current timestep. 
 
         '''
-
 
         elements_to_delete = []
 
@@ -58,7 +55,7 @@ class ObsFiltering():
             self.old_trajectories.append(traj)
             del self.trajectories[indx]
 
-    def select_highest_proposal(self,state):
+    def select_highest_proposal(self, state):
         '''
         Computes the trajectory that has the highest probability of corresponding to 
         the given new state
@@ -78,18 +75,14 @@ class ObsFiltering():
         best_candidate = None
 
         for traj in self.trajectories:
-            
             val = traj.compute_probability(state)
             if highest_val < val:
                 highest_val = val
-               
                 best_candidate = traj
-
-
         return best_candidate
 
 
-    def add_observations_to_trajectories(self,frame):
+    def add_observations_to_trajectories(self, frame):
         ''''
         Add the current frame to the trajectories
 
@@ -100,24 +93,16 @@ class ObsFiltering():
 
         '''
 
-        
         for obj in frame:
-
-            if  obj['initial_state']:
+            if  obj['is_initial_state']:
                 new_trajectory = Trajectory(obj,self.config)
                 self.trajectories.append(new_trajectory)
-
             else:
-              
                 traj = self.select_highest_proposal(obj)
-
                 traj.append_to_trajectory(obj)
 
 
-
-
-
-    def heuristic_label(self,trajectories):
+    def heuristic_label(self, trajectories):
 
         ''''
         Recovers the seperate trajectories given the postiional positions from the 
@@ -130,29 +115,8 @@ class ObsFiltering():
 
         '''
 
-
-
         self.trajectories = []
-
-
         for frame in trajectories:
-
             self.add_observations_to_trajectories(frame)
-           
             self.clear_trajectories(frame[0]['timestep'])
-
-        
-        return self.trajectories+self.old_trajectories
-
-
-
-
-
-
-
-
-
-
-        
-
-
+        return self.trajectories + self.old_trajectories

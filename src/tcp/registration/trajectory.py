@@ -6,7 +6,6 @@ import IPython
 from tcp.utils.utils import compute_angle,measure_probability
 class Trajectory():
 
-
     def __init__(self, initial_pose,config):
         '''
         Initialize trajectory 
@@ -21,7 +20,6 @@ class Trajectory():
 
 
         '''
-
 
         self.initial_time_step = initial_pose['timestep']
         self.class_label = initial_pose['class_label']
@@ -65,7 +63,6 @@ class Trajectory():
         float, current angle range [-pi,pi]
 
         '''
-      
 
         lane = self.list_of_states[0]['lane']
         if lane is None:
@@ -104,7 +101,6 @@ class Trajectory():
         the angle computed in compute_probability
         '''
 
-
         self.list_of_states.append(datum)
         self.past_angle = self.curr_angle
 
@@ -124,7 +120,6 @@ class Trajectory():
         bool, True if the trajectory is valid and False if not. 
         '''
 
-
         last_state = self.list_of_states[-1]
 
         if current_timestop - last_state['timestep'] > self.config.time_limit:
@@ -143,7 +138,6 @@ class Trajectory():
         float, current angle in range [-pi,pi] 
         '''
 
-
         pos = self.return_last_state_pos()
 
         angle = compute_angle(self.curr_state,pos)
@@ -160,7 +154,6 @@ class Trajectory():
         ------------
         float, range [-inf,0] where 0 corrresponds to more probable 
         '''
-        
 
         pos = self.return_last_state_pos()
         self.curr_state = [state['pose'][0],state['pose'][1]]
@@ -170,17 +163,8 @@ class Trajectory():
         mean = np.array([pos[0],pos[1],self.past_angle])        
         state_full = np.array([self.curr_state[0],self.curr_state[1],curr_angle])
 
-       
         var = measure_probability(self.cov,mean,state_full)
        
-
         self.curr_angle = curr_angle
         
-
-
         return var
-
-
-
-
-       
