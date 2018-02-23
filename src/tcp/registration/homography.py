@@ -81,29 +81,26 @@ class Homography():
         A list of frames, which is a list state dictionaries for each timestep
         '''
 
-
-
         tf_traj = []
         for frame in trajectory:
 
             new_frame = []
 
-            for obj in frame:
-
-                x,y,cls_label,t,initial_state = obj
-
-                x, y = self.config.alberta_img_dim[0] * x, self.config.alberta_img_dim[1]* y
+            for obj_dict in frame:
+                x = self.config.alberta_img_dim[0] * obj_dict['x'] 
+                y = self.config.alberta_img_dim[1] * obj_dict['y']
 
                 tx, ty = self.tf_mat.inverse(np.array((x, y)))[0]
                 
-                pose = np.array([tx,ty])
+                pose = np.array([tx, ty])
 
-                new_obj = {'pose':pose,'class_label':cls_label,
-                    'timestep':t,
-                    'lane':self.determine_lane(pose),
-                    'initial_state':initial_state}
+                new_obj_dict = {'pose': pose,
+                        'class_label': obj_dict['cls_label'],
+                        'timestep': obj_dict['t'],
+                        'lane': self.determine_lane(pose),
+                        'is_initial_state': obj_dict['is_initial_state']}
 
-                new_frame.append(new_obj)
+                new_frame.append(new_obj_dict)
 
             tf_traj.append(new_frame)
 
@@ -127,17 +124,13 @@ def test_homography(hm):
 
        
 
-def test_camera_point(hm,trajectory):
+def test_camera_point(hm, trajectory):
     ''''
     Plots a trajectory on the driving simulator 
     '''
   
     for frame in trajectory:
-        for obj in frame:
-            x,y,cls_label,t = obj
-
-            x, y = int(hm.config.alberta_img_dim[0] * x), int(hm.config.alberta_img_dim[1]* y)
-            hm.vz_debug.visualize_camera_point(x,y,t)
-               
-            
-
+        for obj_dict in frame:
+            x = int(hm.config.alberta_img_dim[0] * obj_dict['x']) 
+            y = int(hm.config.alberta_img_dim[1] * obj_dict['y'])
+            hm.vz_debug.visualize_camera_point(x, y, obj_dict['t'])
