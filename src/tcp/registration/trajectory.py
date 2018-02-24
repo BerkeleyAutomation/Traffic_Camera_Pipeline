@@ -52,6 +52,32 @@ class Trajectory():
 
         return state['pose'],True
 
+    def get_states_at_timestep(self, t):
+        '''
+        Returns a list of poses corresponding to timestep t in the trajectory.
+        
+        Return
+        ---------
+        list of np.array, each size 2 for (x,y) pose 
+        bool, True if the list isn't empty
+
+        '''
+        if len(self.list_of_states) == 0:
+            return None, False
+
+        poses = []
+
+        while self.list_of_states[0]['timestep'] == t:
+            state = self.list_of_states.pop(0)
+            poses.append(state['pose'])
+
+            if len(self.list_of_states) == 0:
+                break
+
+        if len(poses) > 0:
+            return poses, True
+        else:
+            return poses, False
 
     def compute_original_angle(self):
         '''

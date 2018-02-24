@@ -143,13 +143,12 @@ class VizRegristration():
             for traj_index in range(len(active_trajectories)):
 
                 traj = active_trajectories[traj_index][0]
-                next_state,valid = traj.get_next_state()
-
+                poses, valid = traj.get_states_at_timestep(t)
 
                 if valid:
-                    w_p = [next_state,active_trajectories[traj_index][1]]
-                    way_points.append(w_p)
-
+                    for pose in poses:
+                        w_p = [pose, active_trajectories[traj_index][1]]
+                        way_points.append(w_p)
 
             ###Render Images on Simulator and Traffic Camera 
             self.env._render(traffic_trajectories = way_points)
