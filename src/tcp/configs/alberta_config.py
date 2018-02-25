@@ -35,8 +35,6 @@ class Config(object):
 
         self.alberta_img_dim = [1280, 720]
 
-        self.init_labeler_pickle_path = 'InitLabeler_pickles/alberta_cam_original_2017-10-26_16-33-45_init_labeler.pkl'
-
         self.traffic_light_threshold = 100  # any pixel with lightness in HLS color space below threadhold will be set to 0
         self.traffic_light_bboxes = [(665, 244, 678, 280),  # (xmin, ymin, xmax, ymax) of the bounding box
                                      (690, 245, 702, 278)]
@@ -51,7 +49,7 @@ class Config(object):
         self.save_images = True
 
         ####FILTERING#######
-        self.time_limit = 50
+        self.time_limit = 100
 
         self.vz_time_horizon = 500
 

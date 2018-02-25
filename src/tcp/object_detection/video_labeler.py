@@ -39,7 +39,6 @@ class LabelVideo():
 
         ### First pass: get bounding ###
         all_rclasses = []
-        all_rscores = []
         all_rbboxes = []
 
         if debug_pickle:
@@ -49,18 +48,13 @@ class LabelVideo():
             except IOError as e:
                 print 'Unable to load "Debug_Pickles/%s_classes.cpkl"' % video_name
             try:
-                all_rscores = pickle.load(open('Debug_Pickles/%s_scores.cpkl' % video_name, 'r'))
-                print 'Loaded "Debug_Pickles/%s_scores.cpkl".' % video_name
-            except IOError as e:
-                print 'Unable to load "Debug_Pickles/%s_scores.cpkl"' % video_name
-            try:
                 all_rbboxes = pickle.load(open('Debug_Pickles/%s_bboxes.cpkl' % video_name, 'r'))
                 print 'Loaded "Debug_Pickles/%s_bboxes.cpkl".' % video_name
             except IOError as e:
                 print 'Unable to load "Debug_Pickles/%s_bboxes.cpkl"' % video_name
 
-        if all_rclasses == [] or all_rscores == [] or all_rbboxes == []:
-            print 'Some detection pickle file failed to load. Running detector network...'
+        if all_rclasses == [] or all_rbboxes == []:
+            print 'Some detection pickle file failed to load. Running detector network... This may take a while.'
             while self.ssd_detector.cap.isOpened():
                 ret, frame = self.ssd_detector.cap.read()
                 if frame is None:
@@ -69,11 +63,9 @@ class LabelVideo():
 
                 # Filter bboxes with cropper mask
                 rclasses = [rclasses[i] for i, bbox in enumerate(rbboxes) if self.cropper.check_is_valid(*bbox)]
-                rscores = [rscores[i] for i, bbox in enumerate(rbboxes) if self.cropper.check_is_valid(*bbox)]
                 rbboxes = [bbox for bbox in rbboxes if self.cropper.check_is_valid(*bbox)]
 
                 all_rclasses.append(rclasses)
-                all_rscores.append(rscores)
                 all_rbboxes.append(rbboxes)
             self.ssd_detector.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
 
@@ -81,19 +73,19 @@ class LabelVideo():
             if not os.path.exists('Debug_Pickles/'):
                 os.makedirs('Debug_Pickles/')
             pickle.dump(all_rclasses, open('Debug_Pickles/%s_classes.cpkl' % video_name, 'w+'))
-            pickle.dump(all_rscores, open('Debug_Pickles/%s_scores.cpkl' % video_name, 'w+'))
             pickle.dump(all_rbboxes, open('Debug_Pickles/%s_bboxes.cpkl' % video_name, 'w+'))
 
         ### CALL INITIAL LABELER ###
         self.init_labeler = InitLabeler_OpenCV(self.config, self.ssd_detector.cap, all_rbboxes, all_rclasses,
-                                        init_labeler_pickle_path='Debug_Pickles/%s_init_labels.cpkl' % video_name,
-                                        cache_frames=False)
+                                        video_name=video_name, cache_frames=False)
+
+        self.all_rbboxes = self.init_labeler.all_rbboxes
+        self.all_rclasses = self.init_labeler.all_rclasses
 
         frame_i = 0
         frame_skip = 0
 
         trajectory = []
-
 
         ### Second pass: process bounding box data ###
         self.ssd_detector.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
@@ -112,14 +104,13 @@ class LabelVideo():
 
             # Process frame here
             rclasses = all_rclasses[frame_i]
-            rscores = all_rscores[frame_i]
             rbboxes = all_rbboxes[frame_i]
 
             if self.config.save_images:
                 debug_img_path = os.path.join(self.config.save_debug_img_path, video_name)
                 if not os.path.exists(debug_img_path):
                     os.makedirs(debug_img_path)
-                bboxes_draw_on_img(frame, rclasses, rscores, rbboxes, colors_tableau)
+                bboxes_draw_on_img(frame, rclasses, [1.0] * len(rclasses), rbboxes, colors_tableau)
                 cv2.imwrite(os.path.join(debug_img_path, '%s_%07d.jpg' % (video_name, frame_i)), frame)
             
             unique, counts = np.unique(rclasses, return_counts=True)
