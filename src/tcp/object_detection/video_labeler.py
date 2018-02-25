@@ -174,15 +174,21 @@ class LabelVideo():
     def get_pedestrian_cords(self, frame_i, rclasses, rbboxes):
         rclasses = np.array(rclasses)
         rbboxes = np.array(rbboxes)
+        assert len(rclasses) == len(rbboxes), 'rclasses: %s\n rbboxes: %s' % (rclasses, rbboxes)
 
         frame = []
+        arg_init_label = self.init_labeler.get_arg_init_label(frame_i)
         for i in range(len(rclasses)):
             if rclasses[i] == 15:
-                y_min, x_min, y_max, x_max = rbboxes[i]
+                x_min, y_min, x_max, y_max = rbboxes[i]
                 point = {'x': (x_min + x_max) / 2.0,
                          'y': (y_min + y_max) / 2.0,
                          'cls_label': 'pedestrian',
                          't': frame_i}
+                if i in arg_init_label:
+                    point['is_initial_state'] = True
+                else:
+                    point['is_initial_state'] = False
                 frame.append(point)
 
         return frame
