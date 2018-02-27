@@ -155,7 +155,7 @@ class InitLabeler_OpenCV():
         if self.video_name is None:
             print 'Video name not provided to InitLabeler. Unable to load InitLabeler pickle file.'
         else:
-            self.init_labeler_pickle_path = 'Debug_Pickles/%s_init_labels.cpkl' % self.video_name
+            self.init_labeler_pickle_path = 'Debug_Pickles/{0}/{0}_init_labels.cpkl'.format(self.video_name)
 
         assert self.num_frames is not None
         self.trajectories = np.empty((self.num_frames, 0)).tolist()
@@ -247,9 +247,9 @@ class InitLabeler_OpenCV():
                 print 'Written trajectories to %s.' % self.init_labeler_pickle_path
 
                 if self.bbox_modified:
-                    pickle.dump(self.all_rclasses, open('Debug_Pickles/%s_classes.cpkl' % self.video_name, 'w+'))
-                    pickle.dump(self.all_rbboxes, open('Debug_Pickles/%s_bboxes.cpkl' % self.video_name, 'w+'))
-                    print 'Bounding boxes manually modified. Written new bounding box data to Debug_Pickles/%s_*.cpkl.' % self.video_name
+                    pickle.dump(self.all_rclasses, open('Debug_Pickles/{0}/{0}_classes.cpkl'.format(self.video_name), 'w+'))
+                    pickle.dump(self.all_rbboxes, open('Debug_Pickles/{0}/{0}_bboxes.cpkl'.format(self.video_name), 'w+'))
+                    print 'Bounding boxes manually modified. Written new bounding box data to Debug_Pickles/{0}/{0}_*.cpkl.'.format(self.video_name)
 
 
         elif key == ord('p'):
