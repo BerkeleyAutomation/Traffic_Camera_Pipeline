@@ -79,7 +79,7 @@ class LabelVideo():
         ### CALL INITIAL LABELER ###
         start_time = time.time()
         self.init_labeler = InitLabeler_OpenCV(self.config, self.ssd_detector.cap, all_rbboxes, all_rclasses,
-                                        video_name=video_name, cache_frames=False)
+                                        video_name=video_name, cache_frames=True)
         elapsed_time = time.time() - start_time
 
         with open('Debug_Pickles/{0}/{0}_timing.txt'.format(video_name),'a+') as timing_file:

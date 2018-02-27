@@ -104,33 +104,31 @@ class InitLabeler_OpenCV():
         self.num_frames = len(self.all_rbboxes)
 
         self.trajectories = self.load_trajectories()
+        self.bbox_modified = False
 
-        if cache_frames:
-            cached_frames = []
+        self.cache_frames = cache_frames
+        self.cached_frames = []
+
+        if self.cache_frames:
+            self.cached_frames = []
             print 'Caching frames into memory...'
             while self.cap.isOpened():
                 ret, frame = self.cap.read()
                 if frame is None:
                     break
-                cached_frames.append(frame)
+                self.cached_frames.append(frame)
 
         try:
             cv2.namedWindow('InitLabeler', cv2.WINDOW_AUTOSIZE | cv2.WINDOW_GUI_NORMAL)
             cv2.setMouseCallback("InitLabeler", self.cv2_on_click)
             while not self.quit_loop:
-                if cache_frames:
-                    self.frame = cached_frames[self.frame_i]
-                else:
-                    self.cap.set(cv2.CAP_PROP_POS_FRAMES, self.frame_i)
-                    _, self.frame = self.cap.read()
-                    if self.frame is None:
-                        break
-                self.cv2_draw_gui()
+                if not self.cv2_draw_gui():
+                    break
                 
                 if self.pause:
                     key = cv2.waitKeyEx(0)
                 else:
-                    key = cv2.waitKeyEx(33)
+                    key = cv2.waitKeyEx(20)
                 self.cv2_on_key_press(key)
 
                 self.frame_i += 1
@@ -262,8 +260,13 @@ class InitLabeler_OpenCV():
             # print 'key pressed: ', key
 
     def cv2_draw_gui(self):
-        self.cap.set(cv2.CAP_PROP_POS_FRAMES, self.frame_i)
-        _, self.frame = self.cap.read()
+        if self.cache_frames:
+            self.frame = np.copy(self.cached_frames[self.frame_i])
+        else:
+            self.cap.set(cv2.CAP_PROP_POS_FRAMES, self.frame_i)
+            _, self.frame = self.cap.read()
+            if self.frame is None:
+                return False
 
         bboxes = self.all_rbboxes[self.frame_i]
         classes = self.all_rclasses[self.frame_i]
@@ -284,6 +287,7 @@ class InitLabeler_OpenCV():
         msg = 'Trajectory #%d Frame: %d/%d' % (self.trajectory_label, self.frame_i, self.num_frames - 1)
         cv2.putText(self.frame, msg, (50, 50), cv2.FONT_HERSHEY_COMPLEX, 2, (200, 0, 200))
         cv2.imshow('InitLabeler', self.frame)
+        return True
 
 
     def has_init_label(self, frame_i):
