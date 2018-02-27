@@ -1,11 +1,16 @@
-# Video Stream Object Detector
-Xinhe Ren, Berkeley Autolab
+# Traffic Camera Pipeline
+Berkeley Autolab
 
 ## Overview
-With the rise of live video streaming, a massive amount of data flows through the internet without getting collected. On the other hand, the recent advance in deep learning has shown the importance of big data. This repo features a pipeline for live stream video collection, as well as online object recognition in video streams.
+With the rise of live video streaming, a massive amount of data flows through the internet without getting collected. On the other hand, the recent advance in deep learning has shown the importance of big data. This repo features a pipeline for live stream video collection, object recognition in videos, and prepares the data to be comsumed by a 2D intersection traffic simulator.
 
 ## Dependencies
-[OpenCV Python](https://opencv.org/)
+numpy (1.14)
+[OpenCV (>= 3.0)](https://opencv.org/)
+scipy (0.17.0)
+scikit-image (0.13)
+tensorflow (>= 1.0)
+youtube-dl (2018.2.4)
 
 ## Object Recognition Architecture
 ### [Single Shot MultiBox Detector (SSD)](https://github.com/balancap/SSD-Tensorflow)
