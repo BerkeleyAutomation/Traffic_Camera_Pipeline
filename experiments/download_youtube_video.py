@@ -4,7 +4,7 @@ from tcp.configs.alberta_config import Config
 from tcp.streaming.youtube_stream_downloader import YoutubeStreamDownloader
 
 youtube_stream_url = 'https://www.youtube.com/watch?v=w54FXQjr0wQ'
-stream_save_path = '/nfs/diskstation/jren/tcp_alberta_cam_test2'
+stream_save_path = '/nfs/diskstation/jren/tcp_alberta_cam_test3'
 
 cnfg = Config()
 downloader = YoutubeStreamDownloader(youtube_stream_url, stream_save_path, cnfg)

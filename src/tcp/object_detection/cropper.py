@@ -15,19 +15,20 @@ import IPython
 
 class Cropper():
 
-    def __init__(self,config):
+    def __init__(self, config):
 
         self.config = config
         self.crop_image = cv2.imread(self.config.crop_image_path)
+        assert self.crop_image is not None, 'Crop image not found'
         self.crop_color = self.crop_image[0,0,:]
 
 
-    def check_is_valid(self,x_min,x_max,y_min,y_max):
+    def check_is_valid(self, x_min, y_min, x_max, y_max):
 
     	x_min = int(self.config.alberta_img_dim[0] * x_min)
-    	x_max = int(self.config.alberta_img_dim[0] * x_max)
-
-    	y_min = int(self.config.alberta_img_dim[1] * y_min)
+        y_min = int(self.config.alberta_img_dim[1] * y_min)
+    	
+        x_max = int(self.config.alberta_img_dim[0] * x_max)
     	y_max = int(self.config.alberta_img_dim[1] * y_max)
 
     	crop_mask = self.crop_image[y_min:y_max,x_min:x_max,:]

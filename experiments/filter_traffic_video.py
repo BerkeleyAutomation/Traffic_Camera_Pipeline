@@ -23,16 +23,16 @@ hm = Homography(cnfg)
 hcl = HardCodeLabel(cnfg)
 of = ObsFiltering(cnfg)
 
-camera_view_trajectory = pickle.load(open('test.p','r'))
+camera_view_trajectory = pickle.load(open('test_hard.cpkl','r'))
 
 
-camera_view_trajectory = hcl.label_video(camera_view_trajectory)
+# camera_view_trajectory = hcl.label_video(camera_view_trajectory)
 simulator_view_trajectory = hm.transform_trajectory(camera_view_trajectory)
 filtered_trajectory = of.heuristic_label(simulator_view_trajectory)
 	
 
-
-vr.visualize_trajectory_dots(filtered_trajectory,plot_traffic_images=True)
+VIDEO_NAME = 'alberta_cam_original_2017-10-26_16-33-45'
+vr.visualize_trajectory_dots(filtered_trajectory, plot_traffic_images=True, video_name=VIDEO_NAME)
 
 
 IPython.embed()

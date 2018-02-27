@@ -68,6 +68,9 @@ class StreamDownloader(object):
             fps = StreamDownloader.FPS_CAP
         assert fps > 0, "FPS can't be negative."
 
+        if not os.path.exists(self.stream_save_path):
+            os.makedirs(self.stream_save_path)
+
         # Define the codec and create VideoWriter object
         fourcc = cv2.VideoWriter_fourcc(*'X264')
 

@@ -7,7 +7,7 @@ import pickle
 import skimage.transform
 import cv2
 import IPython
-from gym_urbandriving.agents import KeyboardAgent, AccelAgent, NullAgent, TrafficLightAgent, RRTAgent
+from gym_urbandriving.agents import KeyboardAgent, AccelAgent, NullAgent, TrafficLightAgent#, RRTAgent
 from gym_urbandriving.assets import Car, TrafficLight
 from tcp.registration.trajectory import Trajectory
 
