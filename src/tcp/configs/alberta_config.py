@@ -20,6 +20,7 @@ class Config(object):
         self.check_point_path = 'Checkpoints/VGG_VOC0712_SSD_300x300_ft_iter_120000.ckpt'
         self.video_root_dir = 'Train_Videos'
         self.save_debug_img_path = 'Debug_Imgs/'
+        self.save_debug_pickles_path = 'Debug_Pickles'
         self.crop_image_path = 'alberta_crop_image.png'
 
         ####REGISTRATION####

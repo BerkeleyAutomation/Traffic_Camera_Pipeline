@@ -44,15 +44,15 @@ class LabelVideo():
 
         if debug_pickle:
             try:
-                all_rclasses = pickle.load(open('Debug_Pickles/{0}/{0}_classes.cpkl'.format(video_name), 'r'))
-                print 'Loaded "Debug_Pickles/{0}/{0}_classes.cpkl".'.format(video_name)
+                all_rclasses = pickle.load(open('{0}/{1}/{1}_classes.cpkl'.format(self.config.save_debug_pickles_path, video_name), 'r'))
+                print 'Loaded "{0}/{1}/{1}_classes.cpkl".'.format(self.config.save_debug_pickles_path, video_name)
             except IOError as e:
-                print 'Unable to load "Debug_Pickles/{0}/{0}_classes.cpkl"'.format(video_name)
+                print 'Unable to load "{0}/{1}/{1}_classes.cpkl"'.format(self.config.save_debug_pickles_path, video_name)
             try:
-                all_rbboxes = pickle.load(open('Debug_Pickles/{0}/{0}_bboxes.cpkl'.format(video_name), 'r'))
-                print 'Loaded "Debug_Pickles/{0}/{0}_bboxes.cpkl".'.format(video_name)
+                all_rbboxes = pickle.load(open('{0}/{1}/{1}_bboxes.cpkl'.format(self.config.save_debug_pickles_path, video_name), 'r'))
+                print 'Loaded "{0}/{1}/{1}_bboxes.cpkl".'.format(self.config.save_debug_pickles_path, video_name)
             except IOError as e:
-                print 'Unable to load "Debug_Pickles/{0}/{0}_bboxes.cpkl"'.format(video_name)
+                print 'Unable to load "{0}/{1}/{1}_bboxes.cpkl"'.format(self.config.save_debug_pickles_path, video_name)
 
         if all_rclasses == [] or all_rbboxes == []:
             print 'Some detection pickle file failed to load. Running detector network... This may take a while.'
@@ -71,10 +71,10 @@ class LabelVideo():
             self.ssd_detector.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
 
         if debug_pickle:
-            if not os.path.exists('Debug_Pickles/{0}'.format(video_name)):
-                os.makedirs('Debug_Pickles/{0}'.format(video_name))
-            pickle.dump(all_rclasses, open('Debug_Pickles/{0}/{0}_classes.cpkl'.format(video_name), 'w+'))
-            pickle.dump(all_rbboxes, open('Debug_Pickles/{0}/{0}_bboxes.cpkl'.format(video_name), 'w+'))
+            if not os.path.exists('{0}/{1}'.format(self.config.save_debug_pickles_path, video_name)):
+                os.makedirs('{0}/{1}'.format(self.config.save_debug_pickles_path, video_name))
+            pickle.dump(all_rclasses, open('{0}/{1}/{1}_classes.cpkl'.format(self.config.save_debug_pickles_path, video_name), 'w+'))
+            pickle.dump(all_rbboxes, open('{0}/{1}/{1}_bboxes.cpkl'.format(self.config.save_debug_pickles_path, video_name), 'w+'))
 
         ### CALL INITIAL LABELER ###
         start_time = time.time()
@@ -82,7 +82,7 @@ class LabelVideo():
                                         video_name=video_name, cache_frames=True)
         elapsed_time = time.time() - start_time
 
-        with open('Debug_Pickles/{0}/{0}_timing.txt'.format(video_name),'a+') as timing_file:
+        with open('{0}/{1}/{1}_timing.txt'.format(self.config.save_debug_pickles_path, video_name),'a+') as timing_file:
             timing_file.write('InitLabeler timing: %d min %d sec (%d seconds)\n\n' % (elapsed_time // 60, elapsed_time % 60, elapsed_time))
 
         self.all_rbboxes = self.init_labeler.all_rbboxes

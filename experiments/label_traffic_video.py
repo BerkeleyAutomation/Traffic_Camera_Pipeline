@@ -39,7 +39,7 @@ for video_path in sorted(videos):
 
     camera_view_trajectory = vl.label_video(video_path, debug_pickle=True)
 
-    with open('Debug_Pickles/{0}/{0}_trajectories.cpkl'.format(video_name),'wb+') as trajectory_file:
+    with open('{0}/{1}/{1}_trajectories.cpkl'.format(self.config.save_debug_pickles_path, video_name),'wb+') as trajectory_file:
         pickle.dump(camera_view_trajectory, trajectory_file)
 
     raw_input('\nPress enter to continue...\n')
