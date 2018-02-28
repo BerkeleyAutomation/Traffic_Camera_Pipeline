@@ -163,7 +163,8 @@ class LabelVideo():
         frame = []
         arg_init_label = self.init_labeler.get_arg_init_label(frame_i)
         for i in range(len(rclasses)):
-            if rclasses[i] == 7:
+            # 6: bus, 7: car, 14: motorcycle
+            if rclasses[i] in [6, 7, 14]:
                 x_min, y_min, x_max, y_max = rbboxes[i]
                 point = {'x': (x_min + x_max) / 2.0,
                          'y': y_max,
@@ -185,7 +186,8 @@ class LabelVideo():
         frame = []
         arg_init_label = self.init_labeler.get_arg_init_label(frame_i)
         for i in range(len(rclasses)):
-            if rclasses[i] == 15:
+            # 2: bicyle, 15: person
+            if rclasses[i] in [2, 15]:
                 x_min, y_min, x_max, y_max = rbboxes[i]
                 point = {'x': (x_min + x_max) / 2.0,
                          'y': (y_min + y_max) / 2.0,

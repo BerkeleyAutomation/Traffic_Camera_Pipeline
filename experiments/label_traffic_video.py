@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
-import os
+import os, sys
+sys.path.insert(0,"/home/autolab/Workspaces/jim_working/env/lib/python2.7/site-packages/")
 
 #from AbstractDetector import AbstractDetector
 from tcp.object_detection.video_labeler import LabelVideo
@@ -22,7 +23,6 @@ vl = LabelVideo(cnfg)
 VIDEO_FILE = 'Train_Videos/*.mp4'
 videos = glob.glob(VIDEO_FILE)
 
-
 ###LABEL VIDEOS
 for video_path in sorted(videos):
     video_name = os.path.splitext(os.path.basename(video_path))[0]
@@ -34,12 +34,14 @@ for video_path in sorted(videos):
     year, month, date = [int(i) for i in datestamp.split('-')]
     hour, minute, second = [int(i) for i in timestamp.split('-')]
 
-    if date <= 25 or hour <= 15 or minute <= 46:
+    if date < 26 or hour < 16 or minute < 33:
         continue
 
     camera_view_trajectory = vl.label_video(video_path, debug_pickle=True)
 
-    with open('{0}/{1}/{1}_trajectories.cpkl'.format(self.config.save_debug_pickles_path, video_name),'wb+') as trajectory_file:
+    with open('{0}/{1}/{1}_trajectories.cpkl'.format(cnfg.save_debug_pickles_path, video_name),'wb+') as trajectory_file:
         pickle.dump(camera_view_trajectory, trajectory_file)
 
     raw_input('\nPress enter to continue...\n')
+
+print 'End of labeling'
