@@ -63,8 +63,9 @@ class VideoLabeler():
                 rclasses, rscores, rbboxes = self.ssd_detector.get_bounding_box(frame)
 
                 # Filter bboxes with cropper mask
-                rclasses = [rclasses[i] for i, bbox in enumerate(rbboxes) if self.cropper.check_is_valid(*bbox)]
-                rbboxes = [bbox for bbox in rbboxes if self.cropper.check_is_valid(*bbox)]
+                rclasses_copy = list(rclasses)
+                rclasses = [rclasses[i] for i, bbox in enumerate(rbboxes) if self.cropper.check_is_valid(rclasses_copy[i], *bbox)]
+                rbboxes = [bbox for i, bbox in enumerate(rbboxes) if self.cropper.check_is_valid(rclasses_copy[i], *bbox)]
 
                 all_rclasses.append(rclasses)
                 all_rbboxes.append(rbboxes)
@@ -177,7 +178,7 @@ class VideoLabeler():
         arg_init_label = self.init_labeler.get_arg_init_label(frame_i)
         for i in range(len(rclasses)):
             # 6: bus, 7: car, 14: motorcycle
-            if rclasses[i] in [6, 7, 14]:
+            if int(rclasses[i]) in [6, 7, 14]:
                 x_min, y_min, x_max, y_max = rbboxes[i]
                 point = {'x': (x_min + x_max) / 2.0,
                          'y': y_max,
@@ -201,7 +202,7 @@ class VideoLabeler():
         arg_init_label = self.init_labeler.get_arg_init_label(frame_i)
         for i in range(len(rclasses)):
             # 2: bicyle, 15: person
-            if rclasses[i] in [2, 15]:
+            if int(rclasses[i]) in [15]:
                 x_min, y_min, x_max, y_max = rbboxes[i]
                 point = {'x': (x_min + x_max) / 2.0,
                          'y': (y_min + y_max) / 2.0,
