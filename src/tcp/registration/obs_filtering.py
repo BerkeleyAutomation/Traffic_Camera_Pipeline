@@ -99,6 +99,7 @@ class ObsFiltering():
                 self.trajectories.append(new_trajectory)
             else:
                 traj = self.select_highest_proposal(obj)
+                assert traj is not None
                 traj.append_to_trajectory(obj)
 
 

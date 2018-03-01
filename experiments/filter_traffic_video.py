@@ -6,12 +6,9 @@ import cv2
 import numpy as np
 
 #from AbstractDetector import AbstractDetector
-from tcp.object_detection.video_labeler import LabelVideo
 from tcp.registration.homography import Homography
 from tcp.registration.obs_filtering import ObsFiltering
 from tcp.registration.viz_regristration import VizRegristration
-from tcp.object_detection.ssd_detector import SSD_VGG16Detector
-from tcp.object_detection.hard_code_labels import HardCodeLabel
 from tcp.configs.alberta_config import Config
 import IPython
 import glob

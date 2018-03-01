@@ -82,7 +82,7 @@ def get_color(trajectory_label):
 
 class InitLabeler_OpenCV():
     # Warning: Caching frames can be very memory intensive for large videos
-    def __init__(self, config, cap, all_rbboxes, all_rclasses, video_name=None, cache_frames=False):
+    def __init__(self, config, cap, all_rbboxes, all_rclasses, video_name=None, cache_frames=False, no_gui=False):
         assert len(all_rbboxes) == len(all_rclasses), \
             'Number of frames in list of bboxes (%d) and list of classes (%d) mismatch' % \
             (len(all_rbboxes), len(all_rclasses))
@@ -104,6 +104,11 @@ class InitLabeler_OpenCV():
         self.num_frames = len(self.all_rbboxes)
 
         self.trajectories = self.load_trajectories()
+
+        if no_gui:
+            print 'Skipping InitLabeler GUI.'
+            return
+
         self.bbox_modified = False
 
         self.cache_frames = cache_frames
