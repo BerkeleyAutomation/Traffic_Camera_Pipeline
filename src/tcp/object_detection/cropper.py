@@ -60,7 +60,12 @@ class Cropper():
         assert crop_mask is not None
         assert full_mask is not None
         num_dims = full_mask.shape[0] * full_mask.shape[1] * full_mask.shape[2]
-        num_match = np.count_nonzero(full_mask - crop_mask)
+        
+        diff_mask = full_mask - crop_mask
+        # Mask is given an color error margin of 3 pixel values
+        diff_mask[abs(diff_mask) < 3] = 0
+        
+        num_match = np.count_nonzero(diff_mask)
         ratio = float(num_match) / float(num_dims)
 
         if ratio > 0.5:
