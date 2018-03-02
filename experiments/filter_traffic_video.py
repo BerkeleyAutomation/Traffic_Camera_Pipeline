@@ -20,7 +20,7 @@ hm = Homography(cnfg)
 of = ObsFiltering(cnfg)
 
 ###GET VIDEOS
-VIDEO_FILE = 'Train_Videos/*.mp4'
+VIDEO_FILE = '%s/*.mp4' % cnfg.video_root_dir
 videos = glob.glob(VIDEO_FILE)
 
 ###LABEL VIDEOS

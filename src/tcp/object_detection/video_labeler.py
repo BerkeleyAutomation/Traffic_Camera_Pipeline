@@ -27,7 +27,9 @@ class VideoLabeler():
         self.config = config
         self.cropper = Cropper(self.config)
         self.ssd_detector = SSD_VGG16Detector('ssd_vgg16', self.config.check_point_path, cropper=self.cropper)
-        
+
+    def __del__(self):
+        self.close_video()
 
     def load_video(self, video_path):
         self.video_path = video_path
@@ -36,6 +38,10 @@ class VideoLabeler():
         if not AbstractDetector.openCapture(self.ssd_detector):
             raise ValueError('Video file %s failed to open.' % video_path)
         print 'Scanning %s...' % (video_path)
+
+    def close_video(self):
+        if self.ssd_detector.cap.isOpened():
+            self.ssd_detector.cap.release()
 
     def generate_bounding_boxes(self, debug_pickle=False):
         ### First pass: get bounding ###
