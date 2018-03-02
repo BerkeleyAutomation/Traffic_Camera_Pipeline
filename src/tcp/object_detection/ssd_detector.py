@@ -1,5 +1,5 @@
 import os, sys
-os.environ["CUDA_VISIBLE_DEVICES"]="3"
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
 import math, random
 import cv2
 import numpy as np
