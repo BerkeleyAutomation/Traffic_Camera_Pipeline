@@ -99,12 +99,13 @@ class VideoLabeler():
         if debug_pickle:
             with open('{0}/{1}/{1}_timing.txt'.format(self.config.save_debug_pickles_path, self.video_name),'a+') as timing_file:
                 timing_file.write('InitLabeler timing: %d min %d sec (%d seconds)\n\n' % (elapsed_time // 60, elapsed_time % 60, elapsed_time))
+            print 'InitLabeler timing: %d min %d sec\n' % (elapsed_time // 60, elapsed_time % 60)
 
         self.all_rbboxes = self.init_labeler.all_rbboxes
         self.all_rclasses = self.init_labeler.all_rclasses
         return self.all_rclasses, self.all_rbboxes
 
-    def generate_trajectories(self, all_rbboxes=None, all_rclasses=None, output_limit=None, num_skip_frames=1):
+    def generate_trajectories(self, all_rbboxes=None, all_rclasses=None, output_limit=None, num_skip_frames=1, save_images=False):
         frame_i = 0
         frame_skip = 0
 
@@ -131,7 +132,7 @@ class VideoLabeler():
             rclasses = all_rclasses[frame_i]
             rbboxes = all_rbboxes[frame_i]
 
-            if self.config.save_images:
+            if save_images:
                 debug_img_path = os.path.join(self.config.save_debug_img_path, self.video_name)
                 if not os.path.exists(debug_img_path):
                     os.makedirs(debug_img_path)

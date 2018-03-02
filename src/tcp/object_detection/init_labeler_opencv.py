@@ -100,8 +100,10 @@ class InitLabeler_OpenCV():
         self.trajectory_label = 0
         self.frame_i = 0
         self.quit_loop = False
-        self.pause = False
+        self.pause = True
         self.num_frames = len(self.all_rbboxes)
+        self.mouse_x = 0
+        self.mouse_y = 0
 
         self.trajectories = self.load_trajectories()
 
@@ -129,6 +131,12 @@ class InitLabeler_OpenCV():
             while not self.quit_loop:
                 if not self.cv2_draw_gui():
                     break
+
+                # Pause on mouse over bbox
+                bboxes = self.all_rbboxes[self.frame_i]
+                for bbox in bboxes:
+                    if self.in_bbox(bbox, self.mouse_x, self.mouse_y):
+                        self.pause = True
                 
                 if self.pause:
                     key = cv2.waitKeyEx(0)
@@ -170,16 +178,16 @@ class InitLabeler_OpenCV():
             print 'No "%s" found. Loading empty trajectory.' % self.init_labeler_pickle_path
         return self.trajectories
 
-    def cv2_on_click(self, event, x, y, flags, param):
-        # bbox: (xmin, ymin, xmax, ymax)
-        def in_bbox(bbox, x, y):
-            scaled_bbox = [int(coord * (self.img_size[0] if i % 2 == 0 else self.img_size[1])) for i, coord in enumerate(bbox)]
-            return x >= scaled_bbox[0] and x <= scaled_bbox[2] and y >= scaled_bbox[1] and y <= scaled_bbox[3]
+    # bbox: (xmin, ymin, xmax, ymax)
+    def in_bbox(self, bbox, x, y):
+        scaled_bbox = [int(coord * (self.img_size[0] if i % 2 == 0 else self.img_size[1])) for i, coord in enumerate(bbox)]
+        return x >= scaled_bbox[0] and x <= scaled_bbox[2] and y >= scaled_bbox[1] and y <= scaled_bbox[3]
 
+    def cv2_on_click(self, event, x, y, flags, param):
         if event == cv2.EVENT_LBUTTONDOWN:
             bboxes = self.all_rbboxes[self.frame_i]
             for i, bbox in enumerate(bboxes):
-                if in_bbox(bbox, x, y):
+                if self.in_bbox(bbox, x, y):
                     # mid_x, mid_y = get_midpoint(*bbox)
                     traj_dict = {
                         'bbox': bbox,
@@ -189,13 +197,14 @@ class InitLabeler_OpenCV():
                     self.trajectories[self.frame_i].append(traj_dict)
                     self.cv2_draw_gui()
                     self.trajectory_label += 1
+                    self.pause = True
 
         if event == cv2.EVENT_RBUTTONDOWN:
             init_dicts = self.trajectories[self.frame_i]
             
             for i, traj_dict in enumerate(init_dicts):
                 init_bbox = traj_dict['bbox']
-                if in_bbox(init_bbox, x, y):
+                if self.in_bbox(init_bbox, x, y):
                     self.trajectories[self.frame_i].pop(i)
                     self.cv2_draw_gui()
                     break
@@ -204,13 +213,17 @@ class InitLabeler_OpenCV():
             bboxes = self.all_rbboxes[self.frame_i]
             
             for i, bbox in enumerate(bboxes):
-                if in_bbox(bbox, x, y):
+                if self.in_bbox(bbox, x, y):
                     self.bbox_modified = True
                     self.all_rbboxes[self.frame_i].pop(i)
                     self.all_rclasses[self.frame_i].pop(i)
                     self.cv2_draw_gui()
                     self.frame_i += 1
                     break
+
+        if event == cv2.EVENT_MOUSEMOVE:
+            self.mouse_x = x
+            self.mouse_y = y
 
     def cv2_on_key_press(self, key):
         if key == ord('q'):
