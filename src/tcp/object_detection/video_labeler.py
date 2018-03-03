@@ -13,8 +13,6 @@ from AbstractDetector import AbstractDetector
 from ssd_detector import SSD_VGG16Detector 
 from tcp.object_detection.cropper import Cropper
 
-import IPython
-
 from tcp.object_detection.init_labeler import InitLabeler
 from tcp.object_detection.init_labeler_opencv import InitLabeler_OpenCV
 from tcp.object_detection.visualization import colors_tableau, bboxes_draw_on_img

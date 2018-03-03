@@ -9,9 +9,6 @@ from urlparse import parse_qs
 
 from AbstractDetector import AbstractDetector
 from ssd_detector import SSD_VGG16Detector
-import IPython
-
-
 
 class Cropper():
 

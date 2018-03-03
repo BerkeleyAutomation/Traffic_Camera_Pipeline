@@ -152,6 +152,7 @@ class InitLabeler_OpenCV():
                     break
         except KeyboardInterrupt:
             pass
+        self.cached_frames = []
         cv2.destroyAllWindows()
         self.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
 

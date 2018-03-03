@@ -99,8 +99,9 @@ class ObsFiltering():
                 self.trajectories.append(new_trajectory)
             else:
                 traj = self.select_highest_proposal(obj)
-                assert traj is not None
-                traj.append_to_trajectory(obj)
+                # assert traj is not None, 'No existing trajectories to append to.'
+                if traj is not None:
+                    traj.append_to_trajectory(obj)
 
 
     def heuristic_label(self, trajectories):
