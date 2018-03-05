@@ -1,9 +1,11 @@
 import numpy as np
 from scipy.stats import multivariate_normal
+from scipy.interpolate import splprep
 import copy
 import IPython
 
 from tcp.utils.utils import compute_angle,measure_probability
+
 class Trajectory():
 
     def __init__(self, initial_pose,config):
@@ -33,25 +35,6 @@ class Trajectory():
                            [ 0.0,  6.0, 0.0],
                            [0.0,  0.0,  1.91510572]])
 
-
-    def get_next_state(self):
-        '''
-        Return the pose for the last state of the trajectory
-        
-        Return
-        ---------
-        np.array, size 2 for (x,y) pose 
-        bool, True if the list isn't empty
-
-        '''
-
-        if len(self.list_of_states) == 0:
-            return None, False
-
-        state = self.list_of_states.pop(0)
-
-        return state['pose'],True
-
     def get_states_at_timestep(self, t):
         '''
         Returns a list of poses corresponding to timestep t in the trajectory.
@@ -65,14 +48,8 @@ class Trajectory():
         if len(self.list_of_states) == 0:
             return None, False
 
-        poses = []
+        poses = [state_dict['pose'] for state_dict in self.list_of_states if state_dict['timestep'] == t]
 
-        while self.list_of_states[0]['timestep'] == t:
-            state = self.list_of_states.pop(0)
-            poses.append(state['pose'])
-
-            if len(self.list_of_states) == 0:
-                break
         return poses, len(poses) > 0
 
     def compute_original_angle(self):
@@ -115,6 +92,12 @@ class Trajectory():
 
         state = self.list_of_states[-1]
         return state['pose']
+
+    def get_first_timestep(self):
+        return min(self.list_of_states, key=lambda x: x['timestep'])['timestep']
+
+    def get_last_timestep(self):
+        return max(self.list_of_states, key=lambda x: x['timestep'])['timestep']
 
 
     def append_to_trajectory(self,datum):
@@ -190,3 +173,14 @@ class Trajectory():
         self.curr_angle = curr_angle
         
         return var
+
+    def fit_to_spline(self):
+        poses = np.array([state_dict['pose'] for state_dict in sorted(self.list_of_states, key=lambda x: x['timestep'])])
+        # unique_poses = []
+        # for x in sorted(np.unique(poses[:, 0])):
+        #     unique_poses.append((x, np.average(poses[np.where(poses[:, 0]==x)][0][1])))
+
+        self.xs = [x for x, y in poses]
+        self.ys = [y for x, y in poses]
+        tck, u = splprep(np.array(poses).T, s=40000) 
+        return tck, u
