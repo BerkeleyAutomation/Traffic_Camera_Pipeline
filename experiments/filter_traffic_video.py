@@ -8,7 +8,7 @@ import numpy as np
 #from AbstractDetector import AbstractDetector
 from tcp.registration.homography import Homography
 from tcp.registration.obs_filtering import ObsFiltering
-from tcp.registration.viz_regristration import VizRegistration
+from tcp.registration.viz_registration import VizRegistration
 from tcp.configs.alberta_config import Config
 import IPython
 import glob
