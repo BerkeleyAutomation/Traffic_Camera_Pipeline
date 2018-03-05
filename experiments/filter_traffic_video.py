@@ -8,14 +8,14 @@ import numpy as np
 #from AbstractDetector import AbstractDetector
 from tcp.registration.homography import Homography
 from tcp.registration.obs_filtering import ObsFiltering
-from tcp.registration.viz_regristration import VizRegristration
+from tcp.registration.viz_regristration import VizRegistration
 from tcp.configs.alberta_config import Config
 import IPython
 import glob
 import cPickle as pickle
 
 cnfg = Config()
-vr = VizRegristration(cnfg)
+vr = VizRegistration(cnfg)
 hm = Homography(cnfg)
 of = ObsFiltering(cnfg)
 
@@ -35,10 +35,10 @@ for video_path in sorted(videos):
 
     # Setting first video
     tmp_time = int('%02d%02d%02d' % (date, hour, minute))
-    if tmp_time < 261633:
+    if tmp_time < 270900:
         continue
     # Setting last video
-    if tmp_time > 261643:
+    if tmp_time > 270900:
         break
 
     print 'Filtering video: %s' % video_path
@@ -51,6 +51,6 @@ for video_path in sorted(videos):
 
     filtered_trajectory = of.heuristic_label(simulator_view_trajectory)
         
-    vr.visualize_trajectory_dots(filtered_trajectory, filter_class='car', plot_traffic_images=False, video_name=video_name)
+    vr.visualize_trajectory_dots(filtered_trajectory, filter_class='car', plot_traffic_images=False, video_name=video_name, animate=False)
 
     raw_input('\nPress enter to continue...\n')

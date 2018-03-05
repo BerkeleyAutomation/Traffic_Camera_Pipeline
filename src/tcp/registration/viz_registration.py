@@ -17,7 +17,7 @@ import seaborn as sns
 
 
 
-class VizRegristration():
+class VizRegistration():
 
     def __init__(self,cnfg):
         ''' 
@@ -84,7 +84,43 @@ class VizRegristration():
         colors = [tuple(map(lambda c: int(255 * c), color)) for color in sns.color_palette("Set1", 8)]
         return colors
 
-    def visualize_trajectory_dots(self, trajectories, filter_class=None, plot_traffic_images=False, video_name=None):
+    def get_way_points(self, trajectories, class_label):
+        active_trajectories = []
+        way_points = []
+
+        color_template = self.get_color_template()
+        color_index = 0
+        last_valid_t = 0
+        for t in range(self.config.vz_time_horizon):
+            way_points_t = []
+            for traj_index, traj in enumerate(trajectories):
+                if traj.class_label != class_label:
+                    continue
+
+                if t == traj.initial_time_step:
+                    color_match = {'trajectory': traj, 
+                                   'color_template': color_template[color_index]}
+                    active_trajectories.append(color_match)
+                    color_index += 1
+                    if color_index == len(color_template):
+                        color_index %= len(color_template)
+                        shuffle(color_template)
+            
+            for traj_index, traj in enumerate(active_trajectories):
+                traj = traj['trajectory']
+                if traj.class_label != class_label:
+                    continue
+                poses, valid = traj.get_states_at_timestep(t)
+
+                if valid:
+                    last_valid_t = t
+                    for pose in poses:
+                        w_p = [pose, active_trajectories[traj_index]['color_template']]
+                        way_points_t.append(w_p)
+            way_points.append(way_points_t)
+        return np.array(way_points[:last_valid_t])
+
+    def visualize_trajectory_dots(self, trajectories, filter_class=None, plot_traffic_images=False, video_name=None, animate=False):
         '''
         Visualize the sperated trajecotries in the simulator and can also visualize the matching images
 
@@ -96,53 +132,27 @@ class VizRegristration():
         plot_traffic_images: bool
         True if the images from the traffic cam should be shown alongside the simulator 
         '''
-        def get_way_points(class_label):
-            active_trajectories = []
-            way_points = []
-
-            color_template = self.get_color_template()
-            color_index = 0
-            for t in range(self.config.vz_time_horizon):
-                for traj_index, traj in enumerate(trajectories):
-                    if traj.class_label != class_label:
-                        continue
-
-                    if t == traj.initial_time_step:
-                        color_match = {'trajectory': traj, 
-                                       'color_template': color_template[color_index]}
-                        active_trajectories.append(color_match)
-                        color_index += 1
-                        if color_index == len(color_template):
-                            color_index %= len(color_template)
-                            shuffle(color_template)
-                
-                for traj_index, traj in enumerate(active_trajectories):
-                    traj = traj['trajectory']
-                    if traj.class_label != class_label:
-                        continue
-                    poses, valid = traj.get_states_at_timestep(t)
-
-                    if valid:
-                        for pose in poses:
-                            w_p = [pose, active_trajectories[traj_index]['color_template']]
-                            way_points.append(w_p)
-            return way_points
-
-
         self.initalize_simulator()
         if plot_traffic_images:
             self.load_frames(video_name)
     
         ###Render Images on Simulator and Traffic Camera
         if filter_class is None:
-            car_way_points = get_way_points('car')
-            pedestrian_way_points = get_way_points('pedestrian')
+            car_way_points = self.get_way_points(trajectories, 'car')
+            pedestrian_way_points = self.get_way_points(trajectories, 'pedestrian')
             way_points = car_way_points + pedestrian_way_points
             self.env._render(traffic_trajectories=way_points)
         else:
             assert filter_class == 'car' or filter_class == 'pedestrian', 'Invalid filter_class: should be car or pedestrian.'
-            way_points = get_way_points(filter_class)
-            self.env._render(traffic_trajectories=way_points)
+            way_points = self.get_way_points(trajectories, filter_class)
+            if animate:
+                for t in range(min(self.config.vz_time_horizon, len(way_points))):
+                    way_points_t = [item[0] for item in way_points[:t].flatten() if len(item) != 0]
+                    self.env._render(traffic_trajectories=way_points_t)
+            else:
+                way_points_temp = way_points.flatten()
+                way_points_temp = [item[0] for item in way_points_temp if len(item) != 0]
+                self.env._render(traffic_trajectories=way_points_temp)
         
         if plot_traffic_images:
             cv2.imshow('img',self.imgs[t])
