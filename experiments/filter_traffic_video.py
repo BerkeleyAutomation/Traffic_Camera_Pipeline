@@ -35,10 +35,10 @@ for video_path in sorted(videos):
 
     # Setting first video
     tmp_time = int('%02d%02d%02d' % (date, hour, minute))
-    if tmp_time < 280900:
+    if tmp_time < 261633:
         continue
     # Setting last video
-    if tmp_time > 281030:
+    if tmp_time > 261643:
         break
 
     print 'Filtering video: %s' % video_path
@@ -51,6 +51,6 @@ for video_path in sorted(videos):
 
     filtered_trajectory = of.heuristic_label(simulator_view_trajectory)
         
-    vr.visualize_trajectory_dots(filtered_trajectory, filter_class='pedestrian', plot_traffic_images=False, video_name=video_name)
+    vr.visualize_trajectory_dots(filtered_trajectory, filter_class='car', plot_traffic_images=False, video_name=video_name)
 
     raw_input('\nPress enter to continue...\n')

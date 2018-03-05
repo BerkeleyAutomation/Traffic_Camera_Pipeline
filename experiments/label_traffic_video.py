@@ -27,23 +27,23 @@ for video_path in sorted(videos):
 
     # Setting first video
     tmp_time = int('%02d%02d%02d' % (date, hour, minute))
-    if tmp_time < 280900:
+    if tmp_time < 271201:
         continue
     # Setting last video
-    if tmp_time > 281030:
+    if tmp_time > 271700:
         break
 
     # Process video
     print '\nRunning video labeler on %s' % (video_name)
     vl.load_video(video_path)
     all_rclasses, all_rbboxes = vl.generate_bounding_boxes(debug_pickle=True)
-    all_rclasses, all_rbboxes = vl.run_init_labeler(debug_pickle=True, no_gui=True)
+    all_rclasses, all_rbboxes = vl.run_init_labeler(debug_pickle=True, show_gui=True)
     camera_view_trajectory = vl.generate_trajectories()
 
     with open('{0}/{1}/{1}_trajectories.cpkl'.format(cnfg.save_debug_pickles_path, video_name),'wb+') as trajectory_file:
         pickle.dump(camera_view_trajectory, trajectory_file)
 
     vl.close_video()
-    # raw_input('\nPress enter to continue...\n')
+    raw_input('\nPress enter to continue...\n')
 
 print 'End of labeling'
