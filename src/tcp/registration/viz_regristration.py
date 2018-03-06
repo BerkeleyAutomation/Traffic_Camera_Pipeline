@@ -13,7 +13,7 @@ from random import shuffle
 from gym_urbandriving.agents import KeyboardAgent, AccelAgent, NullAgent, TrafficLightAgent#, RRTAgent
 from gym_urbandriving.assets import Car, TrafficLight
 
-import colorlover as cl
+import seaborn as sns
 
 
 
@@ -42,7 +42,8 @@ class VizRegristration():
        
         self.imgs = []
         for i in range(self.config.vz_time_horizon):
-            debug_img_path = os.path.join(self.config.homography_training_data, video_name+'_images')
+
+            debug_img_path = os.path.join(self.config.save_debug_img_path, video_name)
             img = cv2.imread(os.path.join(debug_img_path, '%s_%07d.jpg' % (video_name, i)))
             self.imgs.append(img)
 
@@ -76,34 +77,14 @@ class VizRegristration():
         IPython.embed()
 
 
-    def compute_color_template(self,num_trajectories):
+    def get_color_template(self):
         ''''
         Returns a spectrum of colors that intrepret between two different spectrums 
         The goal is to have unique color for each trajectories
-
-        Parameter
-        ------------
-        num_trajectories: int
-        Number of Trajectories to plot 
         '''
 
-        color_r = np.linspace(255,0,num = num_trajectories)
-        color_g = np.linspace(126,0,num = num_trajectories)
-        color_b = np.linspace(0,255,num = num_trajectories)
-        color_template = []
-
-        for i in range(num_trajectories):
-
-            c_r = int(color_r[i])
-            c_g = int(color_g[i])
-            c_b = int(color_b[i])
-
-            color_template.append((c_r,c_g,c_b))
-       
-        shuffle(color_template)
-        return color_template
-
-
+        colors = [tuple(map(lambda c: int(255 * c), color)) for color in sns.color_palette("Set1", 8)]
+        return colors
 
     def visualize_trajectory_dots(self, trajectories, plot_traffic_images=False, video_name=None,render_surface = None):
         '''
@@ -125,21 +106,20 @@ class VizRegristration():
         active_trajectories = []
         way_points = []
 
-        color_template = self.compute_color_template(len(trajectories))
-
+        color_template = self.get_color_template()
         color_index = 0
         for t in range(self.config.vz_time_horizon):
 
             for traj_index in range(len(trajectories)):
 
                 traj = trajectories[traj_index]
-                
-                if t == traj.initial_time_step:
-                    
-                    color_match = [traj,color_template[color_index]]
+                if t == traj.initial_time_step:    
+                    color_match = [traj, color_template[color_index]]
                     active_trajectories.append(color_match)
                     color_index += 1
-            
+                    if color_index == len(color_template):
+                        color_index %= len(color_template)
+                        shuffle(color_template)
             
             for traj_index in range(len(active_trajectories)):
 

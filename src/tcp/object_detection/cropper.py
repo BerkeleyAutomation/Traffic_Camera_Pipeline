@@ -16,39 +16,59 @@ import IPython
 class Cropper():
 
     def __init__(self, config):
-
         self.config = config
-        self.crop_image = cv2.imread(self.config.crop_image_path)
-        assert self.crop_image is not None, 'Crop image not found'
-        self.crop_color = self.crop_image[0,0,:]
+
+        self.car_crop_image = cv2.imread(self.config.car_crop_image_path)
+        if self.car_crop_image is None:
+            print 'Car crop image not found'
+        else:
+            self.car_crop_color = self.car_crop_image[0,0,:]
+
+        self.pedestrian_crop_image = cv2.imread(self.config.pedestrian_crop_image_path)
+        if self.pedestrian_crop_image is None:
+            print 'Pedestrian crop image not found'
+        else:
+            self.pedestrian_crop_color = self.pedestrian_crop_image[0,0,:]
 
 
-    def check_is_valid(self, x_min, y_min, x_max, y_max):
+    def check_is_valid(self, rclass, x_min, y_min, x_max, y_max):
+        rclass = int(rclass)
+        x_min = int(self.config.img_dim[0] * x_min)
+        y_min = int(self.config.img_dim[1] * y_min)
+        
+        x_max = int(self.config.img_dim[0] * x_max)
+        y_max = int(self.config.img_dim[1] * y_max)
 
-    	x_min = int(self.config.alberta_img_dim[0] * x_min)
-        y_min = int(self.config.alberta_img_dim[1] * y_min)
-    	
-        x_max = int(self.config.alberta_img_dim[0] * x_max)
-    	y_max = int(self.config.alberta_img_dim[1] * y_max)
+        # import pdb; pdb.set_trace()
+        crop_mask = None
+        full_mask = None
+        # 6: bus, 7: car, 14: motorcycle
+        if rclass in [6, 7, 14]:
+            if self.car_crop_image is None:
+                return True
+            crop_mask = self.car_crop_image[y_min : y_max, x_min : x_max, :]
+            full_mask = np.zeros(crop_mask.shape) + self.car_crop_color
+        # 2: bicyle, 15: person
+        elif rclass in [15]:
+            if self.pedestrian_crop_image is None:
+                return True
+            crop_mask = self.pedestrian_crop_image[y_min : y_max, x_min : x_max, :]
+            full_mask = np.zeros(crop_mask.shape) + self.pedestrian_crop_color
+        else:
+            return False
 
-    	crop_mask = self.crop_image[y_min:y_max,x_min:x_max,:]
+        assert crop_mask is not None
+        assert full_mask is not None
+        num_dims = full_mask.shape[0] * full_mask.shape[1] * full_mask.shape[2]
+        
+        diff_mask = full_mask - crop_mask
+        # Mask is given an color error margin of 3 pixel values
+        diff_mask[abs(diff_mask) < 3] = 0
+        
+        num_match = np.count_nonzero(diff_mask)
+        ratio = float(num_match) / float(num_dims)
 
-    	full_mask = np.zeros(crop_mask.shape) + self.crop_color
-
-    	num_dims = full_mask.shape[0]*full_mask.shape[1]*full_mask.shape[2]
-
-    	num_match = np.count_nonzero(full_mask-crop_mask)
-
-    	ratio = float(num_match)/float(num_dims)
-
-    	if ratio > 0.5:
-    		return True
-    	else:
-    		return False
-            
-
-
-
-if __name__ == "__main__":
-    # main()
-    annotateImage('../uds_video_demo/alberta_nobox.png')
+        if ratio > 0.5:
+            return True
+        else:
+            return False

@@ -124,8 +124,8 @@ class Homography():
             new_frame = []
 
             for obj_dict in frame:
-                x = self.config.alberta_img_dim[0] * obj_dict['x'] 
-                y = self.config.alberta_img_dim[1] * obj_dict['y']
+                x = self.config.img_dim[0] * obj_dict['x'] 
+                y = self.config.img_dim[1] * obj_dict['y']
 
                 cam_pose = np.array([x,y])
                 
@@ -178,8 +178,8 @@ def test_camera_point(hm, trajectory):
   
     for frame in trajectory:
         for obj_dict in frame:
-            x = int(hm.config.alberta_img_dim[0] * obj_dict['x']) 
-            y = int(hm.config.alberta_img_dim[1] * obj_dict['y'])
+            x = int(hm.config.img_dim[0] * obj_dict['x']) 
+            y = int(hm.config.img_dim[1] * obj_dict['y'])
             hm.vz_debug.visualize_camera_point(x, y, obj_dict['t'])
 
 

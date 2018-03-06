@@ -18,9 +18,11 @@ class Config(object):
         self.STREAM_OUTPUT_DIR_SIZE_LIMIT = 1e10    # maximum size limit for downloaded video in bytes
 
         self.check_point_path = 'Checkpoints/VGG_VOC0712_SSD_300x300_ft_iter_120000.ckpt'
-        self.video_root_dir = 'Train_Videos'
+        self.video_root_dir = '/nfs/diskstation/jren/alberta_cam/'
         self.save_debug_img_path = 'Debug_Imgs/'
-        self.crop_image_path = 'alberta_crop_image.png'
+        self.save_debug_pickles_path = '/nfs/diskstation/jren/tcp_alberta_cam_pickles_20_examples/'
+        self.car_crop_image_path = 'alberta_car_crop_image.png'
+        self.pedestrian_crop_image_path = 'alberta_pedestrian_crop_image.png'
 
         self.homography_training_data = 'homography_training/'
 
@@ -35,7 +37,7 @@ class Config(object):
                                [600, 600],
                                [600, 400]])
 
-        self.alberta_img_dim = [1280, 720]
+        self.img_dim = [1280, 720]
 
         self.traffic_light_threshold = 100  # any pixel with lightness in HLS color space below threadhold will be set to 0
         self.traffic_light_bboxes = [(665, 244, 678, 280),  # (xmin, ymin, xmax, ymax) of the bounding box

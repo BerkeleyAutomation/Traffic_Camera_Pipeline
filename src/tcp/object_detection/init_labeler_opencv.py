@@ -82,7 +82,7 @@ def get_color(trajectory_label):
 
 class InitLabeler_OpenCV():
     # Warning: Caching frames can be very memory intensive for large videos
-    def __init__(self, config, cap, all_rbboxes, all_rclasses, video_name=None, cache_frames=False):
+    def __init__(self, config, cap, all_rbboxes, all_rclasses, video_name=None, cache_frames=False, no_gui=False):
         assert len(all_rbboxes) == len(all_rclasses), \
             'Number of frames in list of bboxes (%d) and list of classes (%d) mismatch' % \
             (len(all_rbboxes), len(all_rclasses))
@@ -100,37 +100,48 @@ class InitLabeler_OpenCV():
         self.trajectory_label = 0
         self.frame_i = 0
         self.quit_loop = False
-        self.pause = False
+        self.pause = True
         self.num_frames = len(self.all_rbboxes)
+        self.mouse_x = 0
+        self.mouse_y = 0
 
         self.trajectories = self.load_trajectories()
 
-        if cache_frames:
-            cached_frames = []
+        if no_gui:
+            print 'Skipping InitLabeler GUI.'
+            return
+
+        self.bbox_modified = False
+
+        self.cache_frames = cache_frames
+        self.cached_frames = []
+
+        if self.cache_frames:
+            self.cached_frames = []
             print 'Caching frames into memory...'
             while self.cap.isOpened():
                 ret, frame = self.cap.read()
                 if frame is None:
                     break
-                cached_frames.append(frame)
+                self.cached_frames.append(frame)
 
         try:
             cv2.namedWindow('InitLabeler', cv2.WINDOW_AUTOSIZE | cv2.WINDOW_GUI_NORMAL)
             cv2.setMouseCallback("InitLabeler", self.cv2_on_click)
             while not self.quit_loop:
-                if cache_frames:
-                    self.frame = cached_frames[self.frame_i]
-                else:
-                    self.cap.set(cv2.CAP_PROP_POS_FRAMES, self.frame_i)
-                    _, self.frame = self.cap.read()
-                    if self.frame is None:
-                        break
-                self.cv2_draw_gui()
+                if not self.cv2_draw_gui():
+                    break
+
+                # Pause on mouse over bbox
+                bboxes = self.all_rbboxes[self.frame_i]
+                for bbox in bboxes:
+                    if self.in_bbox(bbox, self.mouse_x, self.mouse_y):
+                        self.pause = True
                 
                 if self.pause:
                     key = cv2.waitKeyEx(0)
                 else:
-                    key = cv2.waitKeyEx(33)
+                    key = cv2.waitKeyEx(20)
                 self.cv2_on_key_press(key)
 
                 self.frame_i += 1
@@ -155,7 +166,7 @@ class InitLabeler_OpenCV():
         if self.video_name is None:
             print 'Video name not provided to InitLabeler. Unable to load InitLabeler pickle file.'
         else:
-            self.init_labeler_pickle_path = 'Debug_Pickles/%s_init_labels.cpkl' % self.video_name
+            self.init_labeler_pickle_path = '{0}/{1}/{1}_init_labels.cpkl'.format(self.config.save_debug_pickles_path, self.video_name)
 
         assert self.num_frames is not None
         self.trajectories = np.empty((self.num_frames, 0)).tolist()
@@ -167,16 +178,16 @@ class InitLabeler_OpenCV():
             print 'No "%s" found. Loading empty trajectory.' % self.init_labeler_pickle_path
         return self.trajectories
 
-    def cv2_on_click(self, event, x, y, flags, param):
-        # bbox: (xmin, ymin, xmax, ymax)
-        def in_bbox(bbox, x, y):
-            scaled_bbox = [int(coord * (self.img_size[0] if i % 2 == 0 else self.img_size[1])) for i, coord in enumerate(bbox)]
-            return x >= scaled_bbox[0] and x <= scaled_bbox[2] and y >= scaled_bbox[1] and y <= scaled_bbox[3]
+    # bbox: (xmin, ymin, xmax, ymax)
+    def in_bbox(self, bbox, x, y):
+        scaled_bbox = [int(coord * (self.img_size[0] if i % 2 == 0 else self.img_size[1])) for i, coord in enumerate(bbox)]
+        return x >= scaled_bbox[0] and x <= scaled_bbox[2] and y >= scaled_bbox[1] and y <= scaled_bbox[3]
 
+    def cv2_on_click(self, event, x, y, flags, param):
         if event == cv2.EVENT_LBUTTONDOWN:
             bboxes = self.all_rbboxes[self.frame_i]
             for i, bbox in enumerate(bboxes):
-                if in_bbox(bbox, x, y):
+                if self.in_bbox(bbox, x, y):
                     # mid_x, mid_y = get_midpoint(*bbox)
                     traj_dict = {
                         'bbox': bbox,
@@ -186,13 +197,14 @@ class InitLabeler_OpenCV():
                     self.trajectories[self.frame_i].append(traj_dict)
                     self.cv2_draw_gui()
                     self.trajectory_label += 1
+                    self.pause = True
 
         if event == cv2.EVENT_RBUTTONDOWN:
             init_dicts = self.trajectories[self.frame_i]
             
             for i, traj_dict in enumerate(init_dicts):
                 init_bbox = traj_dict['bbox']
-                if in_bbox(init_bbox, x, y):
+                if self.in_bbox(init_bbox, x, y):
                     self.trajectories[self.frame_i].pop(i)
                     self.cv2_draw_gui()
                     break
@@ -201,13 +213,17 @@ class InitLabeler_OpenCV():
             bboxes = self.all_rbboxes[self.frame_i]
             
             for i, bbox in enumerate(bboxes):
-                if in_bbox(bbox, x, y):
+                if self.in_bbox(bbox, x, y):
                     self.bbox_modified = True
                     self.all_rbboxes[self.frame_i].pop(i)
                     self.all_rclasses[self.frame_i].pop(i)
                     self.cv2_draw_gui()
                     self.frame_i += 1
                     break
+
+        if event == cv2.EVENT_MOUSEMOVE:
+            self.mouse_x = x
+            self.mouse_y = y
 
     def cv2_on_key_press(self, key):
         if key == ord('q'):
@@ -247,9 +263,9 @@ class InitLabeler_OpenCV():
                 print 'Written trajectories to %s.' % self.init_labeler_pickle_path
 
                 if self.bbox_modified:
-                    pickle.dump(self.all_rclasses, open('Debug_Pickles/%s_classes.cpkl' % self.video_name, 'w+'))
-                    pickle.dump(self.all_rbboxes, open('Debug_Pickles/%s_bboxes.cpkl' % self.video_name, 'w+'))
-                    print 'Bounding boxes manually modified. Written new bounding box data to Debug_Pickles/%s_*.cpkl.' % self.video_name
+                    pickle.dump(self.all_rclasses, open('{0}/{1}/{1}_classes.cpkl'.format(self.config.save_debug_pickles_path, self.video_name), 'w+'))
+                    pickle.dump(self.all_rbboxes, open('{0}/{1}/{1}_bboxes.cpkl'.format(self.config.save_debug_pickles_path, self.video_name), 'w+'))
+                    print 'Bounding boxes manually modified. Written new bounding box data to {0}/{1}/{1}_*.cpkl.'.format(self.config.save_debug_pickles_path, self.video_name)
 
 
         elif key == ord('p'):
@@ -262,8 +278,13 @@ class InitLabeler_OpenCV():
             # print 'key pressed: ', key
 
     def cv2_draw_gui(self):
-        self.cap.set(cv2.CAP_PROP_POS_FRAMES, self.frame_i)
-        _, self.frame = self.cap.read()
+        if self.cache_frames:
+            self.frame = np.copy(self.cached_frames[self.frame_i])
+        else:
+            self.cap.set(cv2.CAP_PROP_POS_FRAMES, self.frame_i)
+            _, self.frame = self.cap.read()
+            if self.frame is None:
+                return False
 
         bboxes = self.all_rbboxes[self.frame_i]
         classes = self.all_rclasses[self.frame_i]
@@ -284,6 +305,7 @@ class InitLabeler_OpenCV():
         msg = 'Trajectory #%d Frame: %d/%d' % (self.trajectory_label, self.frame_i, self.num_frames - 1)
         cv2.putText(self.frame, msg, (50, 50), cv2.FONT_HERSHEY_COMPLEX, 2, (200, 0, 200))
         cv2.imshow('InitLabeler', self.frame)
+        return True
 
 
     def has_init_label(self, frame_i):

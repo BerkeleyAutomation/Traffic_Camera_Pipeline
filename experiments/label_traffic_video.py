@@ -1,41 +1,49 @@
 from __future__ import unicode_literals
 
-import sys, os
-import cv2
-import youtube_dl
-import numpy as np
-from urlparse import parse_qs
+import os, sys
+sys.path.insert(0,"/home/autolab/Workspaces/jim_working/env/lib/python2.7/site-packages/")
 
-#from AbstractDetector import AbstractDetector
-from tcp.object_detection.video_labeler import LabelVideo
-from tcp.registration.homography import Homography
-from tcp.registration.iterative_filtering import IterativeFiltering
-from tcp.object_detection.ssd_detector import SSD_VGG16Detector
+from tcp.object_detection.video_labeler import VideoLabeler
 from tcp.configs.alberta_config import Config
-import IPython
 import cPickle as pickle
 import glob
 
-VIDEO_FILE = 'Train_Videos/*.mp4'
-
 cnfg = Config()
-vl = LabelVideo(cnfg)
-hm = Homography(cnfg)
-iterative_filter = IterativeFiltering(cnfg)
-
+vl = VideoLabeler(cnfg)
 
 ###GET VIDEOS
+VIDEO_FILE = '%s/*.mp4' % cnfg.video_root_dir
 videos = glob.glob(VIDEO_FILE)
 
-
-
 ###LABEL VIDEOS
-camera_view_trajectories = []
-# IPython.embed()
-# for video in videos[0]:
-# 	IPython.embed()
-# 	camera_view_trajectory = vl.label_video(video)
-# 	camera_view_trajectories.append(camera_view_trajectory)
+for video_path in sorted(videos):
+    video_name = os.path.splitext(os.path.basename(video_path))[0]
+    
+    datestamp = video_name.split('_')[-2]
+    timestamp = video_name.split('_')[-1]
 
-camera_view_trajectory = vl.label_video(videos[0], output_limit=1000, debug_pickle=True)
-pickle.dump(camera_view_trajectory, open('test_hard.cpkl','wb+'))
+    year, month, date = [int(i) for i in datestamp.split('-')]
+    hour, minute, second = [int(i) for i in timestamp.split('-')]
+
+    # Setting first video
+    tmp_time = int('%02d%02d%02d' % (date, hour, minute))
+    if tmp_time < 281000:
+        continue
+    # Setting last video
+    if tmp_time > 281700:
+        break
+
+    # Process video
+    print '\nRunning video labeler on %s' % (video_name)
+    vl.load_video(video_path)
+    all_rclasses, all_rbboxes = vl.generate_bounding_boxes(debug_pickle=True)
+    all_rclasses, all_rbboxes = vl.run_init_labeler(debug_pickle=True, no_gui=False)
+    camera_view_trajectory = vl.generate_trajectories()
+
+    with open('{0}/{1}/{1}_trajectories.cpkl'.format(cnfg.save_debug_pickles_path, video_name),'wb+') as trajectory_file:
+        pickle.dump(camera_view_trajectory, trajectory_file)
+
+    vl.close_video()
+    raw_input('\nPress enter to continue...\n')
+
+print 'End of labeling'
