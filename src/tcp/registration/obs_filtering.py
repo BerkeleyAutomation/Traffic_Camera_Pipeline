@@ -16,7 +16,7 @@ from tcp.registration.trajectory import Trajectory
 
 class ObsFiltering():
 
-    def __init__(self, config):
+    def __init__(self, config,label = 'car'):
         ''''
         Initializes ObsFiltering class
 
@@ -94,6 +94,8 @@ class ObsFiltering():
         '''
 
         for obj in frame:
+
+
             if  obj['is_initial_state']:
                 new_trajectory = Trajectory(obj,self.config)
                 self.trajectories.append(new_trajectory)
@@ -121,4 +123,10 @@ class ObsFiltering():
         for frame in trajectories:
             self.add_observations_to_trajectories(frame)
             self.clear_trajectories(frame[0]['timestep'])
-        return self.trajectories + self.old_trajectories
+
+        trajectores = self.trajectories + self.old_trajectories
+
+        for traj in trajectories: 
+            traj.prune_points_near_edge()
+            
+        return 

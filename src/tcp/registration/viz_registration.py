@@ -33,16 +33,12 @@ class VizRegistration():
         self.config = cnfg
 
 
-    def load_frames(self, video_name):
+    def load_frames(self, video_name, time_limit):
         '''
         Load label images to be plotted 
         '''
-        if video_name is None:
-            print 'Visualizer failed to load frames. Video name not provided.'
-            return
-
         self.imgs = []
-        for i in range(self.config.vz_time_horizon):
+        for i in range(time_limit):
             debug_img_path = os.path.join(self.config.save_debug_img_path, video_name)
             img = cv2.imread(os.path.join(debug_img_path, '%s_%07d.jpg' % (video_name, i)))
             self.imgs.append(img)
@@ -74,25 +70,26 @@ class VizRegistration():
 
         self.env._reset(new_state=self.init_state)
 
-
     def get_color_template(self):
         ''''
         Returns a spectrum of colors that intrepret between two different spectrums 
         The goal is to have unique color for each trajectories
         '''
 
-        colors = [tuple(map(lambda c: int(255 * c), color)) for color in sns.color_palette("Set1", 8)]
+        colors = [tuple(map(lambda c: int(255 * c), color)) for color in sns.color_palette("tab20", 20)]
         return colors
 
     def get_way_points(self, trajectories, class_label):
         active_trajectories = []
-        way_points = []
+        way_points = [[]]
 
         color_template = self.get_color_template()
         color_index = 0
         last_valid_t = 0
-        for t in range(self.config.vz_time_horizon):
-            way_points_t = []
+
+        max_t = max([traj.get_last_timestep() for traj in trajectories])
+
+        for t in range(max_t):
             for traj_index, traj in enumerate(trajectories):
                 if traj.class_label != class_label:
                     continue
@@ -106,19 +103,21 @@ class VizRegistration():
                         color_index %= len(color_template)
                         shuffle(color_template)
             
+            way_points_t = []
             for traj_index, traj in enumerate(active_trajectories):
                 traj = traj['trajectory']
                 if traj.class_label != class_label:
                     continue
-                poses, valid = traj.get_states_at_timestep(t)
+                poses, valid = traj.get_poses_at_timestep(t)
 
                 if valid:
                     last_valid_t = t
                     for pose in poses:
-                        w_p = [pose, active_trajectories[traj_index]['color_template']]
+                        w_p = (pose, active_trajectories[traj_index]['color_template'])
                         way_points_t.append(w_p)
             way_points.append(way_points_t)
-        return np.array(way_points[:last_valid_t])
+            
+        return np.array(way_points)[1:last_valid_t]
 
     def visualize_trajectory_dots(self, trajectories, filter_class=None, plot_traffic_images=False, video_name=None, animate=False):
         '''
@@ -133,10 +132,10 @@ class VizRegistration():
         True if the images from the traffic cam should be shown alongside the simulator 
         '''
         self.initalize_simulator()
-        if plot_traffic_images:
-            self.load_frames(video_name)
-    
+
         ###Render Images on Simulator and Traffic Camera
+        max_t = max([traj.get_last_timestep() for traj in trajectories])
+
         if filter_class is None:
             car_way_points = self.get_way_points(trajectories, 'car')
             pedestrian_way_points = self.get_way_points(trajectories, 'pedestrian')
@@ -146,22 +145,29 @@ class VizRegistration():
             assert filter_class == 'car' or filter_class == 'pedestrian', 'Invalid filter_class: should be car or pedestrian.'
             way_points = self.get_way_points(trajectories, filter_class)
             if animate:
-                for t in range(min(self.config.vz_time_horizon, len(way_points))):
-                    way_points_t = [item[0] for item in way_points[:t].flatten() if len(item) != 0]
-                    self.env._render(traffic_trajectories=way_points_t)
+                time_limit = float('inf') if self.config.vz_time_horizon is None else self.config.vz_time_horizon
+                time_limit = min(max_t, time_limit)
+                self.load_frames(video_name, time_limit)
+                for t in range(time_limit):
+                    way_points_temp = way_points[:t].flatten()
+                    way_points_render = []
+                    for way_points_t in way_points_temp:
+                        way_points_render += way_points_t
+                    # way_points_t = [item[0] for item in way_points[:t].flatten() if len(item) != 0]
+                    self.env._render(traffic_trajectories=way_points_render)
+
+                    if plot_traffic_images:
+                        cv2.imshow('img',self.imgs[t])
+                        cv2.waitKey(20)
             else:
                 way_points_temp = way_points.flatten()
-                way_points_temp = [item[0] for item in way_points_temp if len(item) != 0]
-                self.env._render(traffic_trajectories=way_points_temp)
-        
-        if plot_traffic_images:
-            cv2.imshow('img',self.imgs[t])
-            cv2.waitKey(30)
-            t+=1
-
+                way_points_render = []
+                for way_points_t in way_points_temp:
+                    way_points_render += way_points_t
+                self.env._render(traffic_trajectories=way_points_render)
         return
 
-    def visualize_homography_points(self):
+    def visualize_homography_points(self,hm):
         ''' 
         Plot the correspnding homography ponts
         Assumes load_frames has been called
@@ -170,19 +176,21 @@ class VizRegistration():
         self.initalize_simulator()
         img = self.imgs[0]
 
-        for i in range(3):
+        for i in range(4):
 
-            point = self.config.street_corners[i,:]
+            point = hm.cc[i]
 
             img[point[1]-5:point[1]+5,point[0]-5:point[0]+5,:]=255
 
+        img = hm.apply_homography_on_img(img)
+        
+
         waypoints = []
 
-        for i in range(3):
-            point = self.config.simulator_corners[i,:]
-            waypoints.append(point)
+        for i in range(4):
+            point = hm.sc[i]
+            waypoints.append([point,(0,255,0)])
 
         while True:
-            self.env._render(waypoints = waypoints)     
-            cv2.imshow('img',img)
-            cv2.waitKey(30)
+            self.env._render(waypoints = waypoints,transparent_surface = img)     
+            
