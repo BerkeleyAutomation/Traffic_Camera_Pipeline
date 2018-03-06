@@ -50,7 +50,6 @@ class Config(object):
         self.sim_scale = [1.04,1.10]
 
         self.use_pedestrian = False
-        self.save_images = True
 
         ####FILTERING#######
         self.time_limit = 100

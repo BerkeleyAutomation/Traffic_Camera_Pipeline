@@ -73,11 +73,7 @@ class Trajectory():
 
             if len(self.list_of_states) == 0:
                 break
-
-        if len(poses) > 0:
-            return poses, True
-        else:
-            return poses, False
+        return poses, len(poses) > 0
 
     def compute_original_angle(self):
         '''
