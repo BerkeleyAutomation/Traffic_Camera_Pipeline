@@ -33,7 +33,7 @@ class VizRegistration():
         self.config = cnfg
 
 
-    def load_frames(self, video_name):
+    def load_frames(self, video_name, time_limit):
         '''
         Load label images to be plotted 
         '''
@@ -42,7 +42,7 @@ class VizRegistration():
             return
 
         self.imgs = []
-        for i in range(self.config.vz_time_horizon):
+        for i in range(time_limit):
             debug_img_path = os.path.join(self.config.save_debug_img_path, video_name)
             img = cv2.imread(os.path.join(debug_img_path, '%s_%07d.jpg' % (video_name, i)))
             self.imgs.append(img)
@@ -91,7 +91,10 @@ class VizRegistration():
         color_template = self.get_color_template()
         color_index = 0
         last_valid_t = 0
-        for t in range(self.config.vz_time_horizon):
+
+        max_t = max([traj.get_last_timestep() for traj in trajectories])
+
+        for t in range(max_t):
             way_points_t = []
             for traj_index, traj in enumerate(trajectories):
                 if traj.class_label != class_label:
@@ -133,10 +136,10 @@ class VizRegistration():
         True if the images from the traffic cam should be shown alongside the simulator 
         '''
         self.initalize_simulator()
-        if plot_traffic_images:
-            self.load_frames(video_name)
     
         ###Render Images on Simulator and Traffic Camera
+        max_t = max([traj.get_last_timestep() for traj in trajectories])
+
         if filter_class is None:
             car_way_points = self.get_way_points(trajectories, 'car')
             pedestrian_way_points = self.get_way_points(trajectories, 'pedestrian')
@@ -146,18 +149,22 @@ class VizRegistration():
             assert filter_class == 'car' or filter_class == 'pedestrian', 'Invalid filter_class: should be car or pedestrian.'
             way_points = self.get_way_points(trajectories, filter_class)
             if animate:
-                for t in range(min(self.config.vz_time_horizon, len(way_points))):
+                time_limit = float('inf') if self.config.vz_time_horizon is None else self.config.vz_time_horizon
+                time_limit = min(max_t, time_limit)
+                self.load_frames(video_name, time_limit)
+                for t in range(time_limit):
                     way_points_t = [item[0] for item in way_points[:t].flatten() if len(item) != 0]
                     self.env._render(traffic_trajectories=way_points_t)
+
+                    if plot_traffic_images:
+                        cv2.imshow('img',self.imgs[t])
+                        cv2.waitKey(20)
             else:
                 way_points_temp = way_points.flatten()
                 way_points_temp = [item[0] for item in way_points_temp if len(item) != 0]
                 self.env._render(traffic_trajectories=way_points_temp)
         
-        if plot_traffic_images:
-            cv2.imshow('img',self.imgs[t])
-            cv2.waitKey(30)
-            t+=1
+        
 
         return
 
