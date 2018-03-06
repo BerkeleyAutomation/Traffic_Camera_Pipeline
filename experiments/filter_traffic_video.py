@@ -1,5 +1,4 @@
 from __future__ import unicode_literals
-
 import sys, os
 import cv2
 
@@ -17,22 +16,25 @@ import IPython
 import glob
 import cPickle as pickle
 
+
+
+
 cnfg = Config()
 vr = VizRegristration(cnfg)
 hm = Homography(cnfg)
 hcl = HardCodeLabel(cnfg)
 of = ObsFiltering(cnfg)
 
-camera_view_trajectory = pickle.load(open('test_hard.cpkl','r'))
+video_name = 'alberta_cam_original_2017-10-26_16-33-45'
 
+camera_view_trajectory = pickle.load(open('test_hard.cpkl','r'))
 
 # camera_view_trajectory = hcl.label_video(camera_view_trajectory)
 simulator_view_trajectory = hm.transform_trajectory(camera_view_trajectory)
 filtered_trajectory = of.heuristic_label(simulator_view_trajectory)
-	
 
-VIDEO_NAME = 'alberta_cam_original_2017-10-26_16-33-45'
-vr.visualize_trajectory_dots(filtered_trajectory, plot_traffic_images=True, video_name=VIDEO_NAME)
+
+vr.visualize_trajectory_dots(filtered_trajectory, plot_traffic_images=False, video_name=video_name,render_surface = hm.apply_homography_on_img)
 
 
 IPython.embed()

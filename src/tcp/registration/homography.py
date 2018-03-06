@@ -3,9 +3,12 @@ import gym_urbandriving as uds
 import cProfile
 import time
 import numpy as np
-import pickle
-from skimage.transform import ProjectiveTransform, warp
-import cv2
+import cPickle as pickle
+import pygame
+from skimage.transform import ProjectiveTransform, warp,PolynomialTransform,PiecewiseAffineTransform
+
+
+from tcp.registration.add_offset import AddOffset
 
 
 import IPython
@@ -35,7 +38,21 @@ class Homography():
 
         #Computes the projected transform for the going from camera to simulator coordinate frame
         self.tf_mat = ProjectiveTransform()
-        self.tf_mat.estimate(self.st_corners, self.corners)
+
+        self.sc,self.cc = self.load_homography_data()
+        self.tf_mat.estimate(self.sc, self.cc)
+
+        self.af = AddOffset()
+
+        #self.tf_mat.estimate(cc, sc,4)
+
+    def load_homography_data(self):
+
+        sim_corners = pickle.load(open('homography/simulator.p','r'))
+
+        cam_corners = pickle.load(open('homography/camera.p','r'))
+
+        return np.array(sim_corners),np.array(cam_corners)
 
 
     def determine_lane(self,point):
@@ -65,6 +82,26 @@ class Homography():
             
         return None
 
+
+    def apply_homography_on_img(self, img):
+        img_warped = warp(img, self.tf_mat, output_shape = (800, 800),order=0)
+        # cv2.imshow('Test Homography', img_warped)
+        # cv2.waitKey(30)
+        
+        return img_warped
+
+
+    def is_near_edge(self,y):
+
+        dist = np.abs(self.config.alberta_img_dim[1] - y)
+        
+        if dist < 15: 
+            return True
+        else: 
+            return False
+
+
+
     def transform_trajectory(self,trajectory):
 
         '''
@@ -90,19 +127,29 @@ class Homography():
                 x = self.config.alberta_img_dim[0] * obj_dict['x'] 
                 y = self.config.alberta_img_dim[1] * obj_dict['y']
 
-                tx, ty = self.tf_mat.inverse(np.array((x, y)))[0]
+                cam_pose = np.array([x,y])
                 
-                pose = np.array([tx, ty])
 
-                new_obj_dict = {'pose': pose,
-                        'class_label': obj_dict['cls_label'],
-                        'timestep': obj_dict['t'],
-                        'lane': self.determine_lane(pose),
-                        'is_initial_state': obj_dict['is_initial_state']}
 
-                new_frame.append(new_obj_dict)
+                if not self.is_near_edge(y):
 
-            tf_traj.append(new_frame)
+                    offset_pose = self.af.add_offset(cam_pose)
+
+                    #offset_pose = cam_pose
+
+                    pose= self.tf_mat.inverse(offset_pose)[0]
+
+                    new_obj_dict = {'pose': pose,
+                            'class_label': obj_dict['cls_label'],
+                            'timestep': obj_dict['t'],
+                            'lane': self.determine_lane(pose),
+                            'is_initial_state': obj_dict['is_initial_state'],
+                            'cam_pose': cam_pose}
+
+                    new_frame.append(new_obj_dict)
+
+            if len(new_frame) > 0: 
+                tf_traj.append(new_frame)
 
         return tf_traj
 
@@ -119,8 +166,8 @@ def test_homography(hm):
 
         point = hm.config.street_corners[i,:]
         x,y = point
-           
-        tx, ty = hm.tf_mat.inverse(np.array((x, y)))[0]
+        
+        tx, ty = hm.tf_mat.__call__(np.array((x, y)))[0]
 
        
 
@@ -135,9 +182,4 @@ def test_camera_point(hm, trajectory):
             y = int(hm.config.alberta_img_dim[1] * obj_dict['y'])
             hm.vz_debug.visualize_camera_point(x, y, obj_dict['t'])
 
-def test_homography_on_img(hm, img):
-    img_warped = cv2.warpPerspective(img, hm.tf_mat._inv_matrix, (img.shape[1], img.shape[0]))
-    cv2.imshow('Test Homography', img_warped)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-    return img_warped
+

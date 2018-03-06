@@ -33,17 +33,16 @@ class VizRegristration():
         self.config = cnfg
 
 
-    def load_frames(self, video_name):
+
+    def load_frames(self,video_name):
         '''
         Load label images to be plotted 
         '''
-        if video_name is None:
-            print 'Visualizer failed to load frames. Video name not provided.'
-            return
 
+       
         self.imgs = []
-        for i in range(1, self.config.vz_time_horizon):
-            debug_img_path = os.path.join(self.config.save_debug_img_path, video_name)
+        for i in range(self.config.vz_time_horizon):
+            debug_img_path = os.path.join(self.config.homography_training_data, video_name+'_images')
             img = cv2.imread(os.path.join(debug_img_path, '%s_%07d.jpg' % (video_name, i)))
             self.imgs.append(img)
 
@@ -73,6 +72,8 @@ class VizRegristration():
         )
 
         self.env._reset(new_state=self.init_state)
+
+        IPython.embed()
 
 
     def compute_color_template(self,num_trajectories):
@@ -104,7 +105,7 @@ class VizRegristration():
 
 
 
-    def visualize_trajectory_dots(self, trajectories, plot_traffic_images=False, video_name=None):
+    def visualize_trajectory_dots(self, trajectories, plot_traffic_images=False, video_name=None,render_surface = None):
         '''
         Visualize the sperated trajecotries in the simulator and can also visualize the matching images
 
@@ -150,18 +151,27 @@ class VizRegristration():
                         w_p = [pose, active_trajectories[traj_index][1]]
                         way_points.append(w_p)
 
+            if plot_traffic_images and not render_surface == None:
+                surface = render_surface(self.imgs[t])
+            else:
+                surface = None
+
+            if plot_traffic_images:
+                cv2.imshow('img',self.imgs[t])
+                cv2.waitKey(10)
+                t+=1
+
+            
+
             ###Render Images on Simulator and Traffic Camera 
             self.env._render(traffic_trajectories = way_points)
             
-            if plot_traffic_images:
-                cv2.imshow('img',self.imgs[t])
-                cv2.waitKey(30)
-                t+=1
+            
 
 
         return
 
-    def visualize_homography_points(self):
+    def visualize_homography_points(self,hm):
         ''' 
         Plot the correspnding homography ponts
         Assumes load_frames has been called
@@ -170,19 +180,21 @@ class VizRegristration():
         self.initalize_simulator()
         img = self.imgs[0]
 
-        for i in range(3):
+        for i in range(4):
 
-            point = self.config.street_corners[i,:]
+            point = hm.cc[i]
 
             img[point[1]-5:point[1]+5,point[0]-5:point[0]+5,:]=255
 
+        img = hm.apply_homography_on_img(img)
+        
+
         waypoints = []
 
-        for i in range(3):
-            point = self.config.simulator_corners[i,:]
-            waypoints.append(point)
+        for i in range(4):
+            point = hm.sc[i]
+            waypoints.append([point,(0,255,0)])
 
         while True:
-            self.env._render(waypoints = waypoints)     
-            cv2.imshow('img',img)
-            cv2.waitKey(30)
+            self.env._render(waypoints = waypoints,transparent_surface = img)     
+            
