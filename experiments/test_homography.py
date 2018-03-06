@@ -8,5 +8,5 @@ from tcp.configs.alberta_config import Config
 cnfg = Config()
 hm = Homography(cnfg)
 
-img = cv2.imread(cnfg.crop_image_path)
+img = cv2.imread(cnfg.pedestrian_crop_image_path)
 img_warped = test_homography_on_img(hm, img)

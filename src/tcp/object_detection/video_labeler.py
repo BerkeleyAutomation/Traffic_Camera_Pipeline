@@ -13,8 +13,6 @@ from AbstractDetector import AbstractDetector
 from ssd_detector import SSD_VGG16Detector 
 from tcp.object_detection.cropper import Cropper
 
-import IPython
-
 from tcp.object_detection.init_labeler import InitLabeler
 from tcp.object_detection.init_labeler_opencv import InitLabeler_OpenCV
 from tcp.object_detection.visualization import colors_tableau, bboxes_draw_on_img
@@ -87,13 +85,13 @@ class VideoLabeler():
         self.all_rclasses = all_rclasses
         return self.all_rclasses, self.all_rbboxes
 
-    def run_init_labeler(self, all_rbboxes=None, all_rclasses=None, no_gui=False, debug_pickle=False):
+    def run_init_labeler(self, all_rbboxes=None, all_rclasses=None, show_gui=True, debug_pickle=False):
         all_rbboxes = self.all_rbboxes if all_rbboxes is None else all_rbboxes
         all_rclasses = self.all_rclasses if all_rclasses is None else all_rclasses
 
         start_time = time.time()
         self.init_labeler = InitLabeler_OpenCV(self.config, self.ssd_detector.cap, all_rbboxes, all_rclasses,
-                                        video_name=self.video_name, cache_frames=True, no_gui=no_gui)
+                                        video_name=self.video_name, cache_frames=True, show_gui=show_gui)
         elapsed_time = time.time() - start_time
 
         if debug_pickle:
