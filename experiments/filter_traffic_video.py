@@ -1,5 +1,4 @@
 from __future__ import unicode_literals
-
 import sys, os
 import cv2
 
@@ -13,6 +12,9 @@ from tcp.configs.alberta_config import Config
 import IPython
 import glob
 import cPickle as pickle
+
+
+
 
 cnfg = Config()
 vr = VizRegistration(cnfg)

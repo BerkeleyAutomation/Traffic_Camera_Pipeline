@@ -37,10 +37,6 @@ class VizRegistration():
         '''
         Load label images to be plotted 
         '''
-        if video_name is None:
-            print 'Visualizer failed to load frames. Video name not provided.'
-            return
-
         self.imgs = []
         for i in range(time_limit):
             debug_img_path = os.path.join(self.config.save_debug_img_path, video_name)
@@ -73,6 +69,8 @@ class VizRegistration():
         )
 
         self.env._reset(new_state=self.init_state)
+
+        IPython.embed()
 
 
     def get_color_template(self):
@@ -171,7 +169,7 @@ class VizRegistration():
                 self.env._render(traffic_trajectories=way_points_render)
         return
 
-    def visualize_homography_points(self):
+    def visualize_homography_points(self,hm):
         ''' 
         Plot the correspnding homography ponts
         Assumes load_frames has been called
@@ -180,19 +178,21 @@ class VizRegistration():
         self.initalize_simulator()
         img = self.imgs[0]
 
-        for i in range(3):
+        for i in range(4):
 
-            point = self.config.street_corners[i,:]
+            point = hm.cc[i]
 
             img[point[1]-5:point[1]+5,point[0]-5:point[0]+5,:]=255
 
+        img = hm.apply_homography_on_img(img)
+        
+
         waypoints = []
 
-        for i in range(3):
-            point = self.config.simulator_corners[i,:]
-            waypoints.append(point)
+        for i in range(4):
+            point = hm.sc[i]
+            waypoints.append([point,(0,255,0)])
 
         while True:
-            self.env._render(waypoints = waypoints)     
-            cv2.imshow('img',img)
-            cv2.waitKey(30)
+            self.env._render(waypoints = waypoints,transparent_surface = img)     
+            

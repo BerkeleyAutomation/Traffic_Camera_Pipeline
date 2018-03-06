@@ -24,6 +24,8 @@ class Config(object):
         self.car_crop_image_path = 'alberta_car_crop_image.png'
         self.pedestrian_crop_image_path = 'alberta_pedestrian_crop_image.png'
 
+        self.homography_training_data = 'homography_training/'
+
         ####REGISTRATION####
         self.street_corners = np.array([[765, 385],
                             [483, 470],
@@ -51,19 +53,25 @@ class Config(object):
 
         ####FILTERING#######
         self.time_limit = 100
-
         self.vz_time_horizon = None
 
         #######LANES######
         #######ENWS ########
 
         self.lanes = [
-            Lane(800, 550, 400, 100),#EAST OUT BOUND
-            Lane(800, 450, 400, 100, angle=-np.pi), #EAST INBOUND
-            Lane(550, 200, 400, 100, angle=(np.pi/2)), #NORTH OUT BOUND
+            Lane(800, 550, 400, 100),                   #EAST OUT BOUND
+            Lane(800, 450, 400, 100, angle=-np.pi),     #EAST INBOUND
+            Lane(550, 200, 400, 100, angle=(np.pi/2)),  #NORTH OUT BOUND
             Lane(450, 200, 400, 100, angle=-(np.pi/2)), #NORTH IN BOUND
-            Lane(200, 450, 400, 100, angle=-np.pi), #WEST OUT BOUND
-            Lane(200, 550, 400, 100), #WEST IN BOUND 
+            Lane(200, 450, 400, 100, angle=-np.pi),     #WEST OUT BOUND
+            Lane(200, 550, 400, 100),                   #WEST IN BOUND 
             Lane(450, 800, 400, 100, angle=-(np.pi/2)), #SOUTH OUT BOUND
-            Lane(550, 800, 400, 100, angle=(np.pi/2)) #SOUTH IN BOUND
+            Lane(550, 800, 400, 100, angle=(np.pi/2))   #SOUTH IN BOUND
         ]
+
+        self.hm_training_data = 500
+        self.homography_points = 4
+        self.registration_points = [[np.array([500,200]),(0,255,0)],
+                                    [np.array([500,700]),(0,255,0)],
+                                    [np.array([600,500]),(0,255,0)],
+                                    [np.array([200,500]),(0,255,0)]]
