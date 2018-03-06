@@ -93,7 +93,7 @@ class Homography():
 
     def is_near_edge(self,y):
 
-        dist = np.abs(self.config.alberta_img_dim[1] - y)
+        dist = np.abs(self.config.img_dim[1] - y)
         
         if dist < 15: 
             return True

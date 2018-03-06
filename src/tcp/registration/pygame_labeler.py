@@ -74,7 +74,7 @@ class PygameLabeler():
         while True:
             values = pygame.mouse.get_pressed()
 
-            self.env._render(traffic_trajectories = self.config.regristration_points)
+            self.env._render(traffic_trajectories = self.config.registration_points)
 
             if values[0]:
                 pose = pygame.mouse.get_pos()
