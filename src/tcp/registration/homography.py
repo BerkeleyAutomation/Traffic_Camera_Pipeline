@@ -131,22 +131,22 @@ class Homography():
                 
 
 
-                if not self.is_near_edge(y):
+                
+                offset_pose = self.af.add_offset(cam_pose)
 
-                    offset_pose = self.af.add_offset(cam_pose)
+                #offset_pose = cam_pose
 
-                    #offset_pose = cam_pose
+                pose= self.tf_mat.inverse(offset_pose)[0]
 
-                    pose= self.tf_mat.inverse(offset_pose)[0]
+                new_obj_dict = {'pose': pose,
+                        'class_label': obj_dict['cls_label'],
+                        'timestep': obj_dict['t'],
+                        'lane': self.determine_lane(pose),
+                        'is_initial_state': obj_dict['is_initial_state'],
+                        'cam_pose': cam_pose
+                        'is_near_edge': self.is_near_edge(y)}
 
-                    new_obj_dict = {'pose': pose,
-                            'class_label': obj_dict['cls_label'],
-                            'timestep': obj_dict['t'],
-                            'lane': self.determine_lane(pose),
-                            'is_initial_state': obj_dict['is_initial_state'],
-                            'cam_pose': cam_pose}
-
-                    new_frame.append(new_obj_dict)
+                new_frame.append(new_obj_dict)
 
             if len(new_frame) > 0: 
                 tf_traj.append(new_frame)

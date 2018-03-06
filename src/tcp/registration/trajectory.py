@@ -36,6 +36,8 @@ class Trajectory():
                              [0.0, 0.0, 1.57, 0.0],
                              [0.0, 0.0, 0.0, 1e8]])
 
+        #SHould be 15e4?
+
         self.probability_list = []
 
     def get_states_at_timestep(self, t):
@@ -186,6 +188,15 @@ class Trajectory():
         self.curr_angle = curr_angle
         
         return var
+
+
+    def prune_points_near_edge(self):
+
+        for state in self.list_of_states:
+
+            if state['is_near_edge']:
+                self.list_of_states.remove(state)
+        
 
     def fit_to_spline(self):
         poses = np.array([state_dict['pose'] for state_dict in sorted(self.list_of_states, key=lambda x: x['timestep'])])

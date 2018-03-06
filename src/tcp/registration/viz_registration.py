@@ -116,6 +116,7 @@ class VizRegistration():
                         w_p = (pose, active_trajectories[traj_index]['color_template'])
                         way_points_t.append(w_p)
             way_points.append(way_points_t)
+            
         return np.array(way_points)[1:last_valid_t]
 
     def visualize_trajectory_dots(self, trajectories, filter_class=None, plot_traffic_images=False, video_name=None, animate=False):
