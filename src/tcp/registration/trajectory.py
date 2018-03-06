@@ -34,7 +34,7 @@ class Trajectory():
         self.cov = np.array([[6.0, 0.0, 0.0, 0.0],
                              [0.0, 6.0, 0.0, 0.0],
                              [0.0, 0.0, 1.57, 0.0],
-                             [0.0, 0.0, 0.0, 1e8]])
+                             [0.0, 0.0, 0.0, 150000]])
 
         #SHould be 15e4?
 
@@ -191,11 +191,12 @@ class Trajectory():
 
 
     def prune_points_near_edge(self):
+        indices_to_keep = []
+        for i,state in enumerate(self.list_of_states):
+            if not state['is_near_edge']:
+                indices_to_keep.append(i)
 
-        for state in self.list_of_states:
-
-            if state['is_near_edge']:
-                self.list_of_states.remove(state)
+        self.list_of_states = np.array(self.list_of_states)[indices_to_keep].tolist()
         
 
     def fit_to_spline(self):

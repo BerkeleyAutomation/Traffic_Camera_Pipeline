@@ -120,13 +120,14 @@ class ObsFiltering():
         '''
 
         self.trajectories = []
+        self.old_trajectories = []
         for frame in trajectories:
             self.add_observations_to_trajectories(frame)
             self.clear_trajectories(frame[0]['timestep'])
 
-        trajectores = self.trajectories + self.old_trajectories
+        trajectories = self.trajectories + self.old_trajectories
 
-        for traj in trajectories: 
+        for traj in trajectories:
             traj.prune_points_near_edge()
             
-        return 
+        return trajectories

@@ -143,7 +143,7 @@ class Homography():
                         'timestep': obj_dict['t'],
                         'lane': self.determine_lane(pose),
                         'is_initial_state': obj_dict['is_initial_state'],
-                        'cam_pose': cam_pose
+                        'cam_pose': cam_pose,
                         'is_near_edge': self.is_near_edge(y)}
 
                 new_frame.append(new_obj_dict)
