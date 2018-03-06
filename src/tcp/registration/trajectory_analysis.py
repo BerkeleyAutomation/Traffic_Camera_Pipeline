@@ -13,6 +13,7 @@ import gym_urbandriving as uds
 from gym_urbandriving.agents import KeyboardAgent, AccelAgent, NullAgent, TrafficLightAgent
 from gym_urbandriving.assets import Car, TrafficLight
 
+import tcp.utils.utils as utils
 from tcp.registration.trajectory import Trajectory
 
 
@@ -49,22 +50,38 @@ class TrajectoryAnalysis:
 
         diff_angle = end_angle - begin_angle
 
-        begin_pose = np.average(trajectory.get_states_at_timestep(trajectory.get_first_timestep())[0], axis=0)
-        end_pose = np.average(trajectory.get_states_at_timestep(trajectory.get_last_timestep())[0], axis=0)
+        begin_pose = np.average(trajectory.get_poses_at_timestep(trajectory.get_first_timestep())[0], axis=0)
+        end_pose = np.average(trajectory.get_poses_at_timestep(trajectory.get_last_timestep())[0], axis=0)
 
         dist = np.sqrt((end_pose[0] - begin_pose[0]) ** 2 + (end_pose[1] - begin_pose[1]) ** 2)
 
         if dist < 50:
             return 'stopped'
 
-        if diff_angle >= -105 and diff_angle <= -75:
+
+        begin_state = trajectory.get_states_at_timestep(trajectory.get_first_timestep())[0]
+        end_state = trajectory.get_states_at_timestep(trajectory.get_last_timestep())[0]
+        begin_lane = begin_state['lane']
+        end_lane = end_state['lane']
+        if begin_lane is not None and end_lane is not None:
+            begin_lane_index = begin_lane['lane_index']
+            end_lane_index = end_lane['lane_index']
+            if utils.FORWARD_LANE_CHANGE[begin_lane_index] == end_lane_index:
+                return 'forward'
+            elif utils.LEFT_TURN_LANE_CHANGE[begin_lane_index] == end_lane_index:
+                return 'left'
+            elif utils.RIGHT_TURN_LANE_CHANGE[begin_lane_index] == end_lane_index:
+                return 'right'
+
+        if diff_angle >= -120 and diff_angle <= -60:
             return 'left'
-        elif diff_angle >= 75 and diff_angle <= 105:
+        elif diff_angle >= 60 and diff_angle <= 120:
             return 'right'
-        elif diff_angle >= -15 and diff_angle <= 15:
+        elif diff_angle >= -30 and diff_angle <= 30:
             return 'forward'
         elif diff_angle <= -165 or diff_angle >= 165:
             return 'u-turn'
+
 
     def visualize_trajectory(self, trajectory):
         tck, u = trajectory.fit_to_spline()

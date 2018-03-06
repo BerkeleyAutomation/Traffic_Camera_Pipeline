@@ -70,9 +70,6 @@ class VizRegistration():
 
         self.env._reset(new_state=self.init_state)
 
-        IPython.embed()
-
-
     def get_color_template(self):
         ''''
         Returns a spectrum of colors that intrepret between two different spectrums 
@@ -111,7 +108,7 @@ class VizRegistration():
                 traj = traj['trajectory']
                 if traj.class_label != class_label:
                     continue
-                poses, valid = traj.get_states_at_timestep(t)
+                poses, valid = traj.get_poses_at_timestep(t)
 
                 if valid:
                     last_valid_t = t

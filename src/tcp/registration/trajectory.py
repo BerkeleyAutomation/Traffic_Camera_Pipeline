@@ -34,11 +34,14 @@ class Trajectory():
         self.cov = np.array([[6.0, 0.0, 0.0, 0.0],
                              [0.0, 6.0, 0.0, 0.0],
                              [0.0, 0.0, 1.57, 0.0],
-                             [0.0, 0.0, 0.0, 150000.0]])
+                             [0.0, 0.0, 0.0, 1e8]])
 
         self.probability_list = []
 
     def get_states_at_timestep(self, t):
+        return [state_dict for state_dict in self.list_of_states if state_dict['timestep'] == t]
+
+    def get_poses_at_timestep(self, t):
         '''
         Returns a list of poses corresponding to timestep t in the trajectory.
         

@@ -36,10 +36,10 @@ for video_path in sorted(videos):
 
     # Setting first video
     tmp_time = int('%02d%02d%02d' % (date, hour, minute))
-    if tmp_time < 270900:
+    if tmp_time < 270923:
         continue
     # Setting last video
-    if tmp_time > 270905:
+    if tmp_time > 270923:
         break
 
     print 'Analyzing video: %s' % video_path
@@ -52,8 +52,8 @@ for video_path in sorted(videos):
     simulator_view_trajectory = hm.transform_trajectory(camera_view_trajectory)
     filtered_trajectory = of.heuristic_label(simulator_view_trajectory)
     
-    traj = filtered_trajectory[0]
-    print ta.get_trajectory_primitive(traj)
-    ta.visualize_trajectory(traj)
+    for traj in filtered_trajectory:
+        print ta.get_trajectory_primitive(traj)
+        ta.visualize_trajectory(traj)
     
     # raw_input('\nPress enter to continue...\n')
