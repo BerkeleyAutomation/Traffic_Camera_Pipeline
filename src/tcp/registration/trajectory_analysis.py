@@ -70,6 +70,9 @@ class TrajectoryAnalysis:
         tck, u = trajectory.fit_to_spline()
 
         plt.figure(figsize=(6.5, 4))
+        axes = plt.gca()
+        axes.set_xlim([-100,1100])
+        axes.set_ylim([-100,1100])
         plt.gca().invert_yaxis()
         plt.scatter(trajectory.xs, trajectory.ys, c='r', marker='.')
 
