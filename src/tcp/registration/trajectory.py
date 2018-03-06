@@ -4,7 +4,7 @@ from scipy.interpolate import splprep
 import copy
 import IPython
 
-from tcp.utils.utils import compute_angle,measure_probability
+from tcp.utils.utils import compute_angle, measure_probability, is_valid_lane_change
 
 class Trajectory():
 
@@ -31,9 +31,12 @@ class Trajectory():
 
         self.still_on = True
 
-        self.cov = np.array([[ 6.0,  0.0, 0.0],
-                           [ 0.0,  6.0, 0.0],
-                           [0.0,  0.0,  1.91510572]])
+        self.cov = np.array([[6.0, 0.0, 0.0, 0.0],
+                             [0.0, 6.0, 0.0, 0.0],
+                             [0.0, 0.0, 1.57, 0.0],
+                             [0.0, 0.0, 0.0, 150000.0]])
+
+        self.probability_list = []
 
     def get_states_at_timestep(self, t):
         '''
@@ -67,16 +70,19 @@ class Trajectory():
         if lane is None:
             return 0.0
 
-        if lane['lane_index'] == 0:
+        #NSEW -> ENWS
+        if lane['lane_index'] == 3:
             return np.pi/2
 
-        elif lane['lane_index'] == 1:
+        elif lane['lane_index'] == 7:
             return -np.pi/2
 
-        elif lane['lane_index'] == 2:
+        elif lane['lane_index'] == 1:
             return np.pi
 
-        elif lane['lane_index'] == 3:
+        elif lane['lane_index'] == 5:
+            return 0.0
+        else: 
             return 0.0
 
 
@@ -105,7 +111,7 @@ class Trajectory():
         Append new pose to trajectory and updates the past angle to have
         the angle computed in compute_probability
         '''
-
+        self.probability_list.append(self.prob_proposal)
         self.list_of_states.append(datum)
         self.past_angle = self.curr_angle
 
@@ -150,7 +156,7 @@ class Trajectory():
         return angle
 
 
-    def compute_probability(self,state):
+    def compute_probability(self, state):
         '''
         Compute the log probability of the proposed state corresponding to this
         trajecotry 
@@ -161,14 +167,18 @@ class Trajectory():
         '''
 
         pos = self.return_last_state_pos()
-        self.curr_state = [state['pose'][0],state['pose'][1]]
+        self.curr_state = [state['pose'][0], state['pose'][1]]
 
         curr_angle = self.compute_new_angle()
+        valid_turn = is_valid_lane_change(self.list_of_states[-1]['lane'], state['lane'])
+        valid_turn *= 1
         
-        mean = np.array([pos[0],pos[1],self.past_angle])        
-        state_full = np.array([self.curr_state[0],self.curr_state[1],curr_angle])
+        mean = np.array([pos[0], pos[1], self.past_angle, 1])
+        state_full = np.array([self.curr_state[0], self.curr_state[1], curr_angle, valid_turn])
 
-        var = measure_probability(self.cov,mean,state_full)
+        var = measure_probability(self.cov, mean, state_full)
+
+        self.prob_proposal = var
        
         self.curr_angle = curr_angle
         
