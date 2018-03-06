@@ -1,8 +1,10 @@
 import numpy as np
-from scipy.stats import multivariate_normal
-from scipy.interpolate import splprep
 import copy
 import IPython
+
+from scipy.stats import multivariate_normal
+from scipy.interpolate import splprep, splev
+from scipy.ndimage import gaussian_filter1d
 
 from tcp.utils.utils import compute_angle, measure_probability, is_valid_lane_change
 
@@ -39,6 +41,16 @@ class Trajectory():
         #SHould be 15e4?
 
         self.probability_list = []
+
+
+    def get_valid_states(self):
+        """
+        Returns a list of states whose poses are within the UDS window.
+        """
+        def in_uds_range(pose):
+            return pose[0] >= 0 and pose[0] <= 1000 and pose[1] >= 0 and pose[1] <= 1000
+
+        return [state_dict for state_dict in self.list_of_states if in_uds_range(state_dict['pose'])]
 
     def get_states_at_timestep(self, t):
         return [state_dict for state_dict in self.list_of_states if state_dict['timestep'] == t]
@@ -200,12 +212,22 @@ class Trajectory():
         
 
     def fit_to_spline(self):
-        poses = np.array([state_dict['pose'] for state_dict in sorted(self.list_of_states, key=lambda x: x['timestep'])])
+        valid_poses = np.array([state_dict['pose'] for state_dict in sorted(self.get_valid_states(), key=lambda x: x['timestep'])])
         # unique_poses = []
         # for x in sorted(np.unique(poses[:, 0])):
         #     unique_poses.append((x, np.average(poses[np.where(poses[:, 0]==x)][0][1])))
 
-        self.xs = [x for x, y in poses]
-        self.ys = [y for x, y in poses]
-        tck, u = splprep(np.array(poses).T, s=40000) 
-        return tck, u
+        self.xs = [x for x, y in valid_poses]
+        self.ys = [y for x, y in valid_poses]
+        self.tck, self.u = splprep(np.array(valid_poses).T, s=40000) 
+        return self.tck, self.u
+
+    def get_smoothed_spline_points(self, u_range=None, sigma=75):
+        if u_range is None:
+            u_new = np.linspace(self.u.min(), self.u.max(), 1000)
+        else:
+            u_new = np.linspace(u_range[0], u_range[1], 100)
+        x_new, y_new = splev(u_new, self.tck)
+        x_new = gaussian_filter1d(x_new, sigma)
+        y_new = gaussian_filter1d(y_new, sigma)
+        return x_new, y_new
