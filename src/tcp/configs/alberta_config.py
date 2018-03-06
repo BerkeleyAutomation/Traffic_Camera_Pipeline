@@ -24,6 +24,8 @@ class Config(object):
         self.car_crop_image_path = 'alberta_car_crop_image.png'
         self.pedestrian_crop_image_path = 'alberta_pedestrian_crop_image.png'
 
+        self.homography_training_data = 'homography_training/'
+
         ####REGISTRATION####
         self.street_corners = np.array([[765, 385],
                             [483, 470],
@@ -55,6 +57,11 @@ class Config(object):
         self.vz_time_horizon = 500
 
 
+        self.hm_training_data = 500
+
+        self.homography_points = 4
+
+
 
 
         #######LANES######
@@ -63,4 +70,11 @@ class Config(object):
                     Lane(550, 800, 400, 100, angle=(np.pi/2)),
                     Lane(800, 450, 400, 100, angle=-np.pi),
                     Lane(200, 550, 400, 100)]
+
+
+
+        self.regristration_points = [[np.array([500,200]),(0,255,0)],
+                                    [np.array([500,700]),(0,255,0)],
+                                    [np.array([600,500]),(0,255,0)],
+                                    [np.array([200,500]),(0,255,0)]]
 
