@@ -18,12 +18,6 @@ from tcp.registration.camera_labeler import CameraLabeler
 
 from sklearn.linear_model import LinearRegression
 
-
-
-import colorlover as cl
-
-
-
 class AddOffset():
 
     def __init__(self):

@@ -219,14 +219,14 @@ class Trajectory():
 
         self.xs = [x for x, y in valid_poses]
         self.ys = [y for x, y in valid_poses]
-        self.tck, self.u = splprep(np.array(valid_poses).T, s=40000) 
+        if len(valid_poses) == 0:
+            return None, None
+        tck_and_u, fp, _, _ = splprep(np.array(valid_poses).T, s=40000, full_output=1)
+        self.tck, self.u = tck_and_u
         return self.tck, self.u
 
-    def get_smoothed_spline_points(self, u_range=None, sigma=75):
-        if u_range is None:
-            u_new = np.linspace(self.u.min(), self.u.max(), 1000)
-        else:
-            u_new = np.linspace(u_range[0], u_range[1], 100)
+    def get_smoothed_spline_points(self, sigma=75):
+        u_new = np.linspace(self.u.min(), self.u.max(), 1000)
         x_new, y_new = splev(u_new, self.tck)
         x_new = gaussian_filter1d(x_new, sigma)
         y_new = gaussian_filter1d(y_new, sigma)
