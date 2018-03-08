@@ -127,7 +127,11 @@ class ObsFiltering():
 
         trajectories = self.trajectories + self.old_trajectories
 
-        for traj in trajectories:
+        traj_to_keep = []
+        for i, traj in enumerate(trajectories):
             traj.prune_points_near_edge()
             
-        return trajectories
+            if len(traj.list_of_states) > 0:
+                traj_to_keep.append(i)
+
+        return np.array(trajectories)[traj_to_keep].tolist()

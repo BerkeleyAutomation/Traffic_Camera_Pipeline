@@ -26,7 +26,7 @@ class TrajectoryAnalysis:
             - left turn: "left"
             - right turn: "right"
             - U-turn: "u-turn"
-            - stopped: "stop"
+            - stopped: "stopped"
             - uncertain: None
     """
     def get_trajectory_primitive(self, trajectory):
@@ -34,11 +34,10 @@ class TrajectoryAnalysis:
         if len(valid_states) < 20:
             print 'Trajectory too short with length %d' % len(valid_states)
             return None
-        
-        tck, u = trajectory.fit_to_spline()
-        assert tck is not None and u is not None
 
         x_new, y_new = trajectory.get_smoothed_spline_points()
+        if x_new is None or y_new is None:
+            return None
         traj_len = len(x_new)
 
         x_new_diff = np.diff(x_new[: traj_len // 10])
@@ -92,27 +91,39 @@ class TrajectoryAnalysis:
 
 
     def visualize_trajectory(self, trajectory):
-        tck, u = trajectory.fit_to_spline()
-
-        if tck is None and u is None:
-            return
-
-        plt.figure(figsize=(10, 10))
-        axes = plt.gca()
-        axes.set_xlim([-100,1100])
-        axes.set_ylim([-100,1100])
-        plt.gca().invert_yaxis()
-
-        plt.plot([400, 400], [0, 1000], color='k')
-        plt.plot([500, 500], [0, 1000], color='k')
-        plt.plot([600, 600], [0, 1000], color='k')
-
-        plt.plot([0, 1000], [400, 400], color='k')
-        plt.plot([0, 1000], [500, 500], color='k')
-        plt.plot([0, 1000], [600, 600], color='k')
-
-        plt.scatter(trajectory.xs, trajectory.ys, c='r', marker='.')
-
         x_new, y_new = trajectory.get_smoothed_spline_points()
-        plt.plot(x_new, y_new)
-        plt.show()
+        if x_new is not None and y_new is not None:
+            plt.figure(figsize=(8, 8))
+            axes = plt.gca()
+            axes.set_xlim([-100,1100])
+            axes.set_ylim([-100,1100])
+            plt.gca().invert_yaxis()
+
+            plt.plot([400, 400], [0, 1000], color='k')
+            plt.plot([500, 500], [0, 1000], color='k')
+            plt.plot([600, 600], [0, 1000], color='k')
+
+            plt.plot([0, 1000], [400, 400], color='k')
+            plt.plot([0, 1000], [500, 500], color='k')
+            plt.plot([0, 1000], [600, 600], color='k')
+
+            plt.scatter(trajectory.xs, trajectory.ys, c='r', marker='.')
+            plt.plot(x_new, y_new)
+            plt.show()
+
+    def save_trajectory(self, trajectory, video_name, trajectory_number):
+        start_lane_index, starts_in_center = trajectory.get_start_lane_index()
+        if start_lane_index is None:
+            return
+        primitive = self.get_trajectory_primitive(trajectory)
+        pickle_dict = {
+            'starts_in_center': starts_in_center,
+            'start_lane_index': start_lane_index,
+            'primitive': primitive,
+            'states': trajectory.list_of_states
+        }
+        pickle_save_path = '{0}/{1}/car_trajectories'.format(self.config.save_debug_pickles_path, video_name)
+        if not os.path.exists(pickle_save_path):
+            os.makedirs(pickle_save_path)
+        with open(os.path.join(pickle_save_path, 'traj%d.pkl' % trajectory_number), 'wb+') as trajectory_file:
+            pickle.dump(pickle_dict, trajectory_file)
