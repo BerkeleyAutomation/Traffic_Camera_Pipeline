@@ -25,14 +25,23 @@ VIDEO_FILE = '%s/*.mp4' % cnfg.video_root_dir
 videos = glob.glob(VIDEO_FILE)
 
 ### Analyze Videos
-stat_dict = {
+car_stat_dict = {
         1: {'left': 0, 'forward': 0, 'right': 0, 'stopped': 0},
         3: {'left': 0, 'forward': 0, 'right': 0, 'stopped': 0},
         5: {'left': 0, 'forward': 0, 'right': 0, 'stopped': 0},
         7: {'left': 0, 'forward': 0, 'right': 0, 'stopped': 0}
     }
 
-initial_state_time_count = {}
+pedestrian_stat_dict = {
+    'north_clw': 0,
+    'north_ccw': 0,
+    'south_clw': 0,
+    'south_ccw': 0,
+    'west_clw': 0,
+    'west_ccw': 0,
+    'east_clw': 0,
+    'east_ccw': 0
+}
 
 for video_path in sorted(videos):
     video_name = os.path.splitext(os.path.basename(video_path))[0]
@@ -48,7 +57,7 @@ for video_path in sorted(videos):
     if tmp_time < 270900:
         continue
     # Setting last video
-    if tmp_time > 270905:
+    if tmp_time > 271300:
         break
 
     print 'Analyzing video: %s' % video_path
@@ -66,35 +75,27 @@ for video_path in sorted(videos):
             continue
         # start_lane_index, _ = traj.get_start_lane_index()
         # primitive = ta.get_trajectory_primitive(traj)
-        # init_state_ts = traj.get_initial_state_timesteps()
-        # for t in init_state_ts:
-        #     if initial_state_time_count.get(t) is None:
-        #         initial_state_time_count[t] = 1
-        #     else:
-        #         initial_state_time_count[t] += 1
 
         # if start_lane_index is not None and\
-        #     stat_dict.get(start_lane_index) is not None:
+        #     car_stat_dict.get(start_lane_index) is not None:
 
         #     if primitive is not None and\
-        #         stat_dict[start_lane_index].get(primitive) is not None:
-        #         stat_dict[start_lane_index][primitive] += 1
+        #         car_stat_dict[start_lane_index].get(primitive) is not None:
+        #         car_stat_dict[start_lane_index][primitive] += 1
 
 
         # ta.save_trajectory(traj, video_name, i)
         traj.prune_points_outside_crosswalks()
-        num_valid_states = len(traj.get_valid_states())
-        if num_valid_states < 20:
-            print 'Trajectory too short after pruning: length %d' % num_valid_states
-            continue
-        ta.visualize_trajectory(traj)
+        pedestrian_primitive = ta.get_pedestrian_trajectory_primitive(traj)
+        if pedestrian_stat_dict.get(pedestrian_primitive) is not None:
+            pedestrian_stat_dict[pedestrian_primitive] += 1
+
+        # ta.visualize_trajectory(traj)
 
     # raw_input('\nPress enter to continue...\n')
-# print len(initial_state_time_count), initial_state_time_count
 
-# for key in stat_dict:
-#     print 'begin from lane %d: ' % key, stat_dict[key]
+# for key in car_stat_dict:
+#     print 'begin from lane %d: ' % key, car_stat_dict[key]
 
 # with open(os.path.join(cnfg.save_debug_pickles_path, 'primitive_count_dict.pkl'), 'w+') as pkl_file:
-#     pickle.dump(stat_dict, pkl_file)
-
+#     pickle.dump(car_stat_dict, pkl_file)

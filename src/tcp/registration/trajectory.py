@@ -6,7 +6,8 @@ from scipy.stats import multivariate_normal
 from scipy.interpolate import splprep, splev
 from scipy.ndimage import gaussian_filter1d
 
-from tcp.utils.utils import compute_angle, measure_probability, is_valid_lane_change
+from tcp.utils.utils import compute_angle, measure_probability, is_valid_lane_change,\
+                            in_uds_range, on_uds_crosswalk
 
 class Trajectory():
 
@@ -47,9 +48,6 @@ class Trajectory():
         """
         Returns a list of states whose poses are within the UDS window.
         """
-        def in_uds_range(pose):
-            return pose[0] >= 0 and pose[0] <= 1000 and pose[1] >= 0 and pose[1] <= 1000
-
         return [state_dict for state_dict in self.list_of_states if in_uds_range(state_dict['pose'])]
 
     def get_initial_state_timesteps(self):
@@ -250,15 +248,6 @@ class Trajectory():
         self.list_of_states = np.array(self.list_of_states)[indices_to_keep].tolist()
 
     def prune_points_outside_crosswalks(self):
-
-        def on_uds_crosswalk(pose):
-
-            def in_bound(n, bound):
-                return n >= min(bound) and n <= max(bound)
-
-            return in_bound(pose[0], (380, 620)) and in_bound(pose[1], (380, 620))\
-                and not (in_bound(pose[0], (420, 580)) and in_bound(pose[1], (420, 580)))
-
         indices_to_keep = []
         for i,state in enumerate(self.list_of_states):
             if on_uds_crosswalk(state['pose']):

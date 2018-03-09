@@ -12,6 +12,7 @@ from gym_urbandriving.agents import KeyboardAgent, AccelAgent, NullAgent, Traffi
 from gym_urbandriving.assets import Car, TrafficLight
 
 import tcp.utils.utils as utils
+from tcp.utils.utils import on_uds_crosswalk, get_quadrant
 from tcp.registration.trajectory import Trajectory
 
 
@@ -30,6 +31,8 @@ class TrajectoryAnalysis:
             - uncertain: None
     """
     def get_car_trajectory_primitive(self, trajectory):
+        assert trajectory.class_label == 'car'
+
         valid_states = trajectory.get_valid_states()
         if len(valid_states) < 20:
             print 'Trajectory too short with length %d' % len(valid_states)
@@ -88,6 +91,71 @@ class TrajectoryAnalysis:
             return 'forward'
         elif diff_angle <= -165 or diff_angle >= 165:
             return 'u-turn'
+
+    def get_pedestrian_trajectory_primitive(self, trajectory):
+        """
+        Set of primitives include:
+            - north crosswalk clockwise:        "north_clw"
+            - north crosswalk counterclockwise: "north_ccw"
+            - south crosswalk clockwise:        "south_clw"
+            - south crosswalk counterclockwise: "south_ccw"
+            - west crosswalk clockwise:         "west_clw"
+            - west crosswalk counterclockwise:  "west_ccw"
+            - east crosswalk clockwise:         "east_clw"
+            - east crosswalk counterclockwise:  "east_ccw"
+            - uncertain: None
+        """
+        assert trajectory.class_label == 'pedestrian'
+
+        valid_states = trajectory.get_valid_states()
+        if len(valid_states) < 20:
+            print 'Trajectory too short with length %d' % len(valid_states)
+            return None
+
+        x_new, y_new = trajectory.get_smoothed_spline_points()
+        if x_new is None or y_new is None or len(x_new) != len(y_new):
+            return None
+
+        for i in range(len(x_new)):
+            if x_new[i] > 480 and x_new[i] < 520 and y_new[i] > 480 and y_new[i] < 520:
+                print 'Spline contains point not on crosswalk: (%d, %d)' % (x_new[i], y_new[i])
+                return None
+
+        begin_pose = (x_new[0], y_new[0])
+        end_pose = (x_new[-1], y_new[-1])
+
+        begin_quad = get_quadrant(begin_pose)
+        end_quad = get_quadrant(end_pose)
+
+        if begin_quad == 1:
+            if end_quad == 2:
+                return 'north_ccw'
+            elif end_quad == 4:
+                return 'east_clw'
+        elif begin_quad == 2:
+            if end_quad == 3:
+                return 'west_ccw'
+            elif end_quad == 1:
+                return 'north_clw'
+        elif begin_quad == 3:
+            if end_quad == 4:
+                return 'south_ccw'
+            elif end_quad == 2:
+                return 'west_clw'
+        elif begin_quad == 4:
+            if end_quad == 1:
+                return 'east_ccw'
+            elif end_quad == 3:
+                return 'south_clw'
+        return None
+
+    def get_trajectory_primitive(self, trajectory):
+        if trajectory.class_label == 'car':
+            return self.get_car_trajectory_primitive(trajectory)
+        elif trajectory.class_label == 'pedestrian':
+            return self.get_pedestrian_trajectory_primitive(trajectory)
+        else:
+            raise TypeError('Invalid trajectory class label: %s' % trajectory.class_label)
 
     def visualize_trajectory(self, trajectory):
         x_new, y_new = trajectory.get_smoothed_spline_points()
