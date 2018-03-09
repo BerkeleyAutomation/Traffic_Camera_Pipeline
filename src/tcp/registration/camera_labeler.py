@@ -15,9 +15,6 @@ from random import shuffle
 import argparse
 import cv2
 
-from gym_urbandriving.agents import KeyboardAgent, AccelAgent, NullAgent, TrafficLightAgent#, RRTAgent
-from gym_urbandriving.assets import Car, TrafficLight
-
 class CameraLabeler():
 
     def __init__(self):
