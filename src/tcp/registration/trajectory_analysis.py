@@ -29,7 +29,7 @@ class TrajectoryAnalysis:
             - stopped: "stopped"
             - uncertain: None
     """
-    def get_trajectory_primitive(self, trajectory):
+    def get_car_trajectory_primitive(self, trajectory):
         valid_states = trajectory.get_valid_states()
         if len(valid_states) < 20:
             print 'Trajectory too short with length %d' % len(valid_states)
@@ -89,7 +89,6 @@ class TrajectoryAnalysis:
         elif diff_angle <= -165 or diff_angle >= 165:
             return 'u-turn'
 
-
     def visualize_trajectory(self, trajectory):
         x_new, y_new = trajectory.get_smoothed_spline_points()
         if x_new is not None and y_new is not None:
@@ -115,7 +114,7 @@ class TrajectoryAnalysis:
         start_lane_index, starts_in_center = trajectory.get_start_lane_index()
         if start_lane_index is None:
             return
-        primitive = self.get_trajectory_primitive(trajectory)
+        primitive = self.get_car_trajectory_primitive(trajectory)
         pickle_dict = {
             'starts_in_center': starts_in_center,
             'start_lane_index': start_lane_index,

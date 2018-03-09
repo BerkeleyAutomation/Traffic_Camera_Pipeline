@@ -48,7 +48,7 @@ for video_path in sorted(videos):
     if tmp_time < 270900:
         continue
     # Setting last video
-    if tmp_time > 271300:
+    if tmp_time > 270905:
         break
 
     print 'Analyzing video: %s' % video_path
@@ -62,14 +62,16 @@ for video_path in sorted(videos):
     filtered_trajectory = of.heuristic_label(simulator_view_trajectory)
     
     for i, traj in enumerate(filtered_trajectory):
+        if traj.class_label != 'pedestrian':
+            continue
         # start_lane_index, _ = traj.get_start_lane_index()
         # primitive = ta.get_trajectory_primitive(traj)
-        init_state_ts = traj.get_initial_state_timesteps()
-        for t in init_state_ts:
-            if initial_state_time_count.get(t) is None:
-                initial_state_time_count[t] = 1
-            else:
-                initial_state_time_count[t] += 1
+        # init_state_ts = traj.get_initial_state_timesteps()
+        # for t in init_state_ts:
+        #     if initial_state_time_count.get(t) is None:
+        #         initial_state_time_count[t] = 1
+        #     else:
+        #         initial_state_time_count[t] += 1
 
         # if start_lane_index is not None and\
         #     stat_dict.get(start_lane_index) is not None:
@@ -80,7 +82,12 @@ for video_path in sorted(videos):
 
 
         # ta.save_trajectory(traj, video_name, i)
-        # ta.visualize_trajectory(traj)
+        traj.prune_points_outside_crosswalks()
+        num_valid_states = len(traj.get_valid_states())
+        if num_valid_states < 20:
+            print 'Trajectory too short after pruning: length %d' % num_valid_states
+            continue
+        ta.visualize_trajectory(traj)
 
     # raw_input('\nPress enter to continue...\n')
 # print len(initial_state_time_count), initial_state_time_count

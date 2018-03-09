@@ -248,6 +248,24 @@ class Trajectory():
                 indices_to_keep.append(i)
 
         self.list_of_states = np.array(self.list_of_states)[indices_to_keep].tolist()
+
+    def prune_points_outside_crosswalks(self):
+
+        def on_uds_crosswalk(pose):
+
+            def in_bound(n, bound):
+                return n >= min(bound) and n <= max(bound)
+
+            return in_bound(pose[0], (380, 620)) and in_bound(pose[1], (380, 620))\
+                and not (in_bound(pose[0], (420, 580)) and in_bound(pose[1], (420, 580)))
+
+        indices_to_keep = []
+        for i,state in enumerate(self.list_of_states):
+            if on_uds_crosswalk(state['pose']):
+                indices_to_keep.append(i)
+
+        self.list_of_states = np.array(self.list_of_states)[indices_to_keep].tolist()
+
         
 
     def fit_to_spline(self):
