@@ -52,6 +52,9 @@ class Trajectory():
 
         return [state_dict for state_dict in self.list_of_states if in_uds_range(state_dict['pose'])]
 
+    def get_initial_state_timesteps(self):
+        return [state_dict['timestep'] for state_dict in self.list_of_states if state_dict['is_initial_state']]
+
     def get_states_at_timestep(self, t):
         return [state_dict for state_dict in self.list_of_states if state_dict['timestep'] == t]
 
@@ -71,6 +74,42 @@ class Trajectory():
         poses = [state_dict['pose'] for state_dict in self.list_of_states if state_dict['timestep'] == t]
 
         return poses, len(poses) > 0
+
+    def get_start_lane_index(self):
+        def get_center_lane_index(pose):
+            """
+            Return the index of the inbound lane POSE is closest to,
+            and whether the beginning pose is in the center of 
+            the intersection.
+
+            First return value is None if pose isn't in the center 
+            square of intersection.
+            """
+            if pose[0] >= 400 and pose[0] <= 500:
+                if pose[1] >= 400 and pose[1] <= 500:
+                    return 3
+                if pose[1] >= 500 and pose[1] <= 600:
+                    return 5
+            elif pose[0] >= 500 and pose[0] <= 600:
+                if pose[1] >= 400 and pose[1] <= 500:
+                    return 1
+                if pose[1] >= 500 and pose[1] <= 600:
+                    return 7
+            else:
+                return None
+
+        valid_states = self.get_valid_states()
+        if valid_states is None or len(valid_states) == 0:
+            return None, None
+
+        begin_lane = valid_states[0]['lane']
+        if begin_lane is None:
+            x_new, y_new = self.get_smoothed_spline_points()
+            if x_new is None or y_new is None:
+                return None, None
+            return get_center_lane_index((x_new[0], y_new[0])), True
+        else:
+            return begin_lane['lane_index'], False
 
     def compute_original_angle(self):
         '''
@@ -221,11 +260,18 @@ class Trajectory():
         self.ys = [y for x, y in valid_poses]
         if len(valid_poses) == 0:
             return None, None
-        tck_and_u, fp, _, _ = splprep(np.array(valid_poses).T, s=40000, full_output=1)
-        self.tck, self.u = tck_and_u
+        try:
+            tck_and_u, fp, _, _ = splprep(np.array(valid_poses).T, s=40000, full_output=1)
+            self.tck, self.u = tck_and_u
+        except:
+            print 'Caught error when fitting spline'
+            return None, None
         return self.tck, self.u
 
     def get_smoothed_spline_points(self, sigma=75):
+        tck, u = self.fit_to_spline()
+        if tck is None or u is None:
+            return None, None
         u_new = np.linspace(self.u.min(), self.u.max(), 1000)
         x_new, y_new = splev(u_new, self.tck)
         x_new = gaussian_filter1d(x_new, sigma)
