@@ -11,8 +11,6 @@ import cv2
 import IPython
 from random import shuffle
 
-from gym_urbandriving.agents import KeyboardAgent, AccelAgent, NullAgent, TrafficLightAgent#, RRTAgent
-from gym_urbandriving.assets import Car, TrafficLight
 
 from tcp.registration.camera_labeler import CameraLabeler
 
