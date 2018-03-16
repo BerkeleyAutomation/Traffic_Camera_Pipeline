@@ -40,7 +40,7 @@ for video_path in sorted(videos):
     if tmp_time < 270900:
         continue
     # Setting last video
-    if tmp_time > 270900:
+    if tmp_time > 270905:
         break
 
     print 'Filtering video: %s' % video_path
@@ -52,6 +52,13 @@ for video_path in sorted(videos):
 
     simulator_view_trajectory = hm.transform_trajectory(camera_view_trajectory)
     filtered_trajectory = of.heuristic_label(simulator_view_trajectory)
-    vr.visualize_trajectory_dots(filtered_trajectory, filter_class='car', plot_traffic_images=False, video_name=video_name, animate=True)
+    # vr.visualize_trajectory_dots(filtered_trajectory, filter_class='pedestrian', plot_traffic_images=False, video_name=video_name, animate=False)
+
+    for traj in filtered_trajectory:
+        if traj.class_label != 'pedestrian':
+            continue
+        # print traj.list_of_states
+        vr.visualize_trajectory_dots([traj], filter_class='pedestrian', plot_traffic_images=False, video_name=video_name, animate=False)
+        raw_input('press enter')
 
     raw_input('\nPress enter to continue...\n')

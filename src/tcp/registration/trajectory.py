@@ -1,10 +1,13 @@
 import numpy as np
-from scipy.stats import multivariate_normal
-from scipy.interpolate import splprep
 import copy
 import IPython
 
-from tcp.utils.utils import compute_angle, measure_probability, is_valid_lane_change
+from scipy.stats import multivariate_normal
+from scipy.interpolate import splprep, splev
+from scipy.ndimage import gaussian_filter1d
+
+from tcp.utils.utils import compute_angle, measure_probability, is_valid_lane_change,\
+                            in_uds_range, on_uds_crosswalk
 
 class Trajectory():
 
@@ -40,6 +43,16 @@ class Trajectory():
 
         self.probability_list = []
 
+
+    def get_valid_states(self):
+        """
+        Returns a list of states whose poses are within the UDS window.
+        """
+        return [state_dict for state_dict in self.list_of_states if in_uds_range(state_dict['pose'])]
+
+    def get_initial_state_timesteps(self):
+        return [state_dict['timestep'] for state_dict in self.list_of_states if state_dict['is_initial_state']]
+
     def get_states_at_timestep(self, t):
         return [state_dict for state_dict in self.list_of_states if state_dict['timestep'] == t]
 
@@ -59,6 +72,42 @@ class Trajectory():
         poses = [state_dict['pose'] for state_dict in self.list_of_states if state_dict['timestep'] == t]
 
         return poses, len(poses) > 0
+
+    def get_start_lane_index(self):
+        def get_center_lane_index(pose):
+            """
+            Return the index of the inbound lane POSE is closest to,
+            and whether the beginning pose is in the center of 
+            the intersection.
+
+            First return value is None if pose isn't in the center 
+            square of intersection.
+            """
+            if pose[0] >= 400 and pose[0] <= 500:
+                if pose[1] >= 400 and pose[1] <= 500:
+                    return 3
+                if pose[1] >= 500 and pose[1] <= 600:
+                    return 5
+            elif pose[0] >= 500 and pose[0] <= 600:
+                if pose[1] >= 400 and pose[1] <= 500:
+                    return 1
+                if pose[1] >= 500 and pose[1] <= 600:
+                    return 7
+            else:
+                return None
+
+        valid_states = self.get_valid_states()
+        if valid_states is None or len(valid_states) == 0:
+            return None, None
+
+        begin_lane = valid_states[0]['lane']
+        if begin_lane is None:
+            x_new, y_new = self.get_smoothed_spline_points()
+            if x_new is None or y_new is None:
+                return None, None
+            return get_center_lane_index((x_new[0], y_new[0])), True
+        else:
+            return begin_lane['lane_index'], False
 
     def compute_original_angle(self):
         '''
@@ -197,15 +246,41 @@ class Trajectory():
                 indices_to_keep.append(i)
 
         self.list_of_states = np.array(self.list_of_states)[indices_to_keep].tolist()
+
+    def prune_points_outside_crosswalks(self):
+        indices_to_keep = []
+        for i,state in enumerate(self.list_of_states):
+            if on_uds_crosswalk(state['pose']):
+                indices_to_keep.append(i)
+
+        self.list_of_states = np.array(self.list_of_states)[indices_to_keep].tolist()
+
         
 
     def fit_to_spline(self):
-        poses = np.array([state_dict['pose'] for state_dict in sorted(self.list_of_states, key=lambda x: x['timestep'])])
+        valid_poses = np.array([state_dict['pose'] for state_dict in sorted(self.get_valid_states(), key=lambda x: x['timestep'])])
         # unique_poses = []
         # for x in sorted(np.unique(poses[:, 0])):
         #     unique_poses.append((x, np.average(poses[np.where(poses[:, 0]==x)][0][1])))
 
-        self.xs = [x for x, y in poses]
-        self.ys = [y for x, y in poses]
-        tck, u = splprep(np.array(poses).T, s=40000) 
-        return tck, u
+        self.xs = [x for x, y in valid_poses]
+        self.ys = [y for x, y in valid_poses]
+        if len(valid_poses) == 0:
+            return None, None
+        try:
+            tck_and_u, fp, _, _ = splprep(np.array(valid_poses).T, s=40000, full_output=1)
+            self.tck, self.u = tck_and_u
+        except:
+            print 'Caught error when fitting spline'
+            return None, None
+        return self.tck, self.u
+
+    def get_smoothed_spline_points(self, sigma=75):
+        tck, u = self.fit_to_spline()
+        if tck is None or u is None:
+            return None, None
+        u_new = np.linspace(self.u.min(), self.u.max(), 1000)
+        x_new, y_new = splev(u_new, self.tck)
+        x_new = gaussian_filter1d(x_new, sigma)
+        y_new = gaussian_filter1d(y_new, sigma)
+        return x_new, y_new

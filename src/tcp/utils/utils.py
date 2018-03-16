@@ -66,8 +66,6 @@ def measure_probability(cov, mean, state):
     float, log probability of value 
     '''
 
-
-
     x_delta = mean[0] - state[0]
     y_delta = mean[1] - state[1]
     angle_delta = euclidean_angle_distance(mean[2], state[2])
@@ -96,6 +94,42 @@ def is_valid_lane_change(old_lane, new_lane):
     return FORWARD_LANE_CHANGE[old_lane] == new_lane or\
         LEFT_TURN_LANE_CHANGE[old_lane] == new_lane or\
         RIGHT_TURN_LANE_CHANGE[old_lane] == new_lane
+
+def get_quadrant(point, limit=(1000, 1000)):
+    """
+    Returns the quadrant that the the point is in.
+
+    Quadrant number is defined as the following:
+    ---------
+    | 2 | 1 |
+    ---------
+    | 3 | 4 |
+    ---------
+            
+    Top left is (0,0), bottom right is LIMIT.
+    """
+
+    if point[0] < limit[0] / 2:
+        if point[1] < limit[1] / 2:
+            return 2
+        else:
+            return 3
+    else:
+        if point[1] < limit[1] / 2:
+            return 1
+        else:
+            return 4
+
+def in_uds_range(pose):
+    return pose[0] >= 0 and pose[0] <= 1000 and pose[1] >= 0 and pose[1] <= 1000
+
+def on_uds_crosswalk(pose):
+
+    def in_bound(n, bound):
+        return n >= min(bound) and n <= max(bound)
+
+    return in_bound(pose[0], (380, 620)) and in_bound(pose[1], (380, 620))\
+        and not (in_bound(pose[0], (420, 580)) and in_bound(pose[1], (420, 580)))
 
 
 ######CRUDE TEST CASES##########

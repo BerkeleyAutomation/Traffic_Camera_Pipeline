@@ -24,7 +24,25 @@ ta = TrajectoryAnalysis(cnfg)
 VIDEO_FILE = '%s/*.mp4' % cnfg.video_root_dir
 videos = glob.glob(VIDEO_FILE)
 
-###LABEL VIDEOS
+### Analyze Videos
+car_stat_dict = {
+        1: {'left': 0, 'forward': 0, 'right': 0, 'stopped': 0},
+        3: {'left': 0, 'forward': 0, 'right': 0, 'stopped': 0},
+        5: {'left': 0, 'forward': 0, 'right': 0, 'stopped': 0},
+        7: {'left': 0, 'forward': 0, 'right': 0, 'stopped': 0}
+    }
+
+pedestrian_stat_dict = {
+    'north_clw': 0,
+    'north_ccw': 0,
+    'south_clw': 0,
+    'south_ccw': 0,
+    'west_clw': 0,
+    'west_ccw': 0,
+    'east_clw': 0,
+    'east_ccw': 0
+}
+
 for video_path in sorted(videos):
     video_name = os.path.splitext(os.path.basename(video_path))[0]
     
@@ -36,10 +54,10 @@ for video_path in sorted(videos):
 
     # Setting first video
     tmp_time = int('%02d%02d%02d' % (date, hour, minute))
-    if tmp_time < 270923:
+    if tmp_time < 270900:
         continue
     # Setting last video
-    if tmp_time > 270923:
+    if tmp_time > 271300:
         break
 
     print 'Analyzing video: %s' % video_path
@@ -52,8 +70,32 @@ for video_path in sorted(videos):
     simulator_view_trajectory = hm.transform_trajectory(camera_view_trajectory)
     filtered_trajectory = of.heuristic_label(simulator_view_trajectory)
     
-    for traj in filtered_trajectory:
-        print ta.get_trajectory_primitive(traj)
-        ta.visualize_trajectory(traj)
-    
+    for i, traj in enumerate(filtered_trajectory):
+        if traj.class_label != 'pedestrian':
+            continue
+        # start_lane_index, _ = traj.get_start_lane_index()
+        # primitive = ta.get_trajectory_primitive(traj)
+
+        # if start_lane_index is not None and\
+        #     car_stat_dict.get(start_lane_index) is not None:
+
+        #     if primitive is not None and\
+        #         car_stat_dict[start_lane_index].get(primitive) is not None:
+        #         car_stat_dict[start_lane_index][primitive] += 1
+
+
+        # ta.save_trajectory(traj, video_name, i)
+        traj.prune_points_outside_crosswalks()
+        pedestrian_primitive = ta.get_pedestrian_trajectory_primitive(traj)
+        if pedestrian_stat_dict.get(pedestrian_primitive) is not None:
+            pedestrian_stat_dict[pedestrian_primitive] += 1
+
+        # ta.visualize_trajectory(traj)
+
     # raw_input('\nPress enter to continue...\n')
+
+# for key in car_stat_dict:
+#     print 'begin from lane %d: ' % key, car_stat_dict[key]
+
+# with open(os.path.join(cnfg.save_debug_pickles_path, 'primitive_count_dict.pkl'), 'w+') as pkl_file:
+#     pickle.dump(car_stat_dict, pkl_file)

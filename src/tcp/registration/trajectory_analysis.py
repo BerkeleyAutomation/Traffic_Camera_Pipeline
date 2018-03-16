@@ -3,10 +3,8 @@ import cv2
 import numpy as np
 import cPickle as pickle
 
-import seaborn as sns
 import matplotlib.pyplot as plt
-
-from scipy.interpolate import splev
+import seaborn as sns
 
 import gym
 import gym_urbandriving as uds
@@ -14,6 +12,7 @@ from gym_urbandriving.agents import KeyboardAgent, AccelAgent, NullAgent, Traffi
 from gym_urbandriving.assets import Car, TrafficLight
 
 import tcp.utils.utils as utils
+from tcp.utils.utils import on_uds_crosswalk, get_quadrant
 from tcp.registration.trajectory import Trajectory
 
 
@@ -28,51 +27,62 @@ class TrajectoryAnalysis:
             - left turn: "left"
             - right turn: "right"
             - U-turn: "u-turn"
-            - stopped: "stop"
+            - stopped: "stopped"
             - uncertain: None
     """
-    def get_trajectory_primitive(self, trajectory):
-        tck, u = trajectory.fit_to_spline()
-        
-        u_new = np.linspace(u[0], u[10], 50)
-        x_new, y_new = splev(u_new, tck)
-        x_new_diff = np.diff(x_new)
-        y_new_diff = np.diff(y_new)
+    def get_car_trajectory_primitive(self, trajectory):
+        assert trajectory.class_label == 'car'
+
+        valid_states = trajectory.get_valid_states()
+        if len(valid_states) < 20:
+            print 'Trajectory too short with length %d' % len(valid_states)
+            return None
+
+        x_new, y_new = trajectory.get_smoothed_spline_points()
+        if x_new is None or y_new is None:
+            return None
+        traj_len = len(x_new)
+
+        x_new_diff = np.diff(x_new[: traj_len // 10])
+        y_new_diff = np.diff(y_new[: traj_len // 10])
+        # print x_new
+        begin_pose = (x_new[0], y_new[0])
         begin_angle = np.degrees(np.arctan2(y_new_diff, x_new_diff))
         begin_angle = np.average(begin_angle)
 
-        u_new = np.linspace(u[-10], u[-1], 50)
-        x_new, y_new = splev(u_new, tck)
-        x_new_diff = np.diff(x_new)
-        y_new_diff = np.diff(y_new)
+        x_new_diff = np.diff(x_new[-(traj_len // 10) : -1])
+        y_new_diff = np.diff(y_new[-(traj_len // 10) : -1])
+        end_pose = (x_new[-1], y_new[-1])
         end_angle = np.degrees(np.arctan2(y_new_diff, x_new_diff))
         end_angle = np.average(end_angle)
 
         diff_angle = end_angle - begin_angle
-
-        begin_pose = np.average(trajectory.get_poses_at_timestep(trajectory.get_first_timestep())[0], axis=0)
-        end_pose = np.average(trajectory.get_poses_at_timestep(trajectory.get_last_timestep())[0], axis=0)
+        if diff_angle < -180 or diff_angle > 180:
+            diff_angle %= 360
 
         dist = np.sqrt((end_pose[0] - begin_pose[0]) ** 2 + (end_pose[1] - begin_pose[1]) ** 2)
 
-        if dist < 50:
+        if dist < 100:
             return 'stopped'
-
 
         begin_state = trajectory.get_states_at_timestep(trajectory.get_first_timestep())[0]
         end_state = trajectory.get_states_at_timestep(trajectory.get_last_timestep())[0]
         begin_lane = begin_state['lane']
         end_lane = end_state['lane']
+        # print begin_lane, end_lane
         if begin_lane is not None and end_lane is not None:
             begin_lane_index = begin_lane['lane_index']
             end_lane_index = end_lane['lane_index']
-            if utils.FORWARD_LANE_CHANGE[begin_lane_index] == end_lane_index:
-                return 'forward'
-            elif utils.LEFT_TURN_LANE_CHANGE[begin_lane_index] == end_lane_index:
-                return 'left'
-            elif utils.RIGHT_TURN_LANE_CHANGE[begin_lane_index] == end_lane_index:
-                return 'right'
+            if begin_lane_index %2 != 0:
+                if utils.FORWARD_LANE_CHANGE[begin_lane_index] == end_lane_index:
+                    return 'forward'
+                elif utils.LEFT_TURN_LANE_CHANGE[begin_lane_index] == end_lane_index:
+                    return 'left'
+                elif utils.RIGHT_TURN_LANE_CHANGE[begin_lane_index] == end_lane_index:
+                    return 'right'
 
+        # print 'pose: %s, %s' % (str(begin_pose), str(end_pose))
+        # print 'angles: %.2f - %.2f = %.2f' % (end_angle, begin_angle, diff_angle)
         if diff_angle >= -120 and diff_angle <= -60:
             return 'left'
         elif diff_angle >= 60 and diff_angle <= 120:
@@ -82,18 +92,105 @@ class TrajectoryAnalysis:
         elif diff_angle <= -165 or diff_angle >= 165:
             return 'u-turn'
 
+    def get_pedestrian_trajectory_primitive(self, trajectory):
+        """
+        Set of primitives include:
+            - north crosswalk clockwise:        "north_clw"
+            - north crosswalk counterclockwise: "north_ccw"
+            - south crosswalk clockwise:        "south_clw"
+            - south crosswalk counterclockwise: "south_ccw"
+            - west crosswalk clockwise:         "west_clw"
+            - west crosswalk counterclockwise:  "west_ccw"
+            - east crosswalk clockwise:         "east_clw"
+            - east crosswalk counterclockwise:  "east_ccw"
+            - uncertain: None
+        """
+        assert trajectory.class_label == 'pedestrian'
+
+        valid_states = trajectory.get_valid_states()
+        if len(valid_states) < 20:
+            print 'Trajectory too short with length %d' % len(valid_states)
+            return None
+
+        x_new, y_new = trajectory.get_smoothed_spline_points()
+        if x_new is None or y_new is None or len(x_new) != len(y_new):
+            return None
+
+        for i in range(len(x_new)):
+            if x_new[i] > 480 and x_new[i] < 520 and y_new[i] > 480 and y_new[i] < 520:
+                print 'Spline contains point not on crosswalk: (%d, %d)' % (x_new[i], y_new[i])
+                return None
+
+        begin_pose = (x_new[0], y_new[0])
+        end_pose = (x_new[-1], y_new[-1])
+
+        begin_quad = get_quadrant(begin_pose)
+        end_quad = get_quadrant(end_pose)
+
+        if begin_quad == 1:
+            if end_quad == 2:
+                return 'north_ccw'
+            elif end_quad == 4:
+                return 'east_clw'
+        elif begin_quad == 2:
+            if end_quad == 3:
+                return 'west_ccw'
+            elif end_quad == 1:
+                return 'north_clw'
+        elif begin_quad == 3:
+            if end_quad == 4:
+                return 'south_ccw'
+            elif end_quad == 2:
+                return 'west_clw'
+        elif begin_quad == 4:
+            if end_quad == 1:
+                return 'east_ccw'
+            elif end_quad == 3:
+                return 'south_clw'
+        return None
+
+    def get_trajectory_primitive(self, trajectory):
+        if trajectory.class_label == 'car':
+            return self.get_car_trajectory_primitive(trajectory)
+        elif trajectory.class_label == 'pedestrian':
+            return self.get_pedestrian_trajectory_primitive(trajectory)
+        else:
+            raise TypeError('Invalid trajectory class label: %s' % trajectory.class_label)
 
     def visualize_trajectory(self, trajectory):
-        tck, u = trajectory.fit_to_spline()
+        x_new, y_new = trajectory.get_smoothed_spline_points()
+        if x_new is not None and y_new is not None:
+            plt.figure(figsize=(8, 8))
+            axes = plt.gca()
+            axes.set_xlim([-100,1100])
+            axes.set_ylim([-100,1100])
+            plt.gca().invert_yaxis()
 
-        plt.figure(figsize=(6.5, 4))
-        axes = plt.gca()
-        axes.set_xlim([-100,1100])
-        axes.set_ylim([-100,1100])
-        plt.gca().invert_yaxis()
-        plt.scatter(trajectory.xs, trajectory.ys, c='r', marker='.')
+            plt.plot([400, 400], [0, 1000], color='k')
+            plt.plot([500, 500], [0, 1000], color='k')
+            plt.plot([600, 600], [0, 1000], color='k')
 
-        u_new = np.linspace(u.min(), u.max(), 1000)
-        x_new, y_new = splev(u_new, tck)
-        plt.plot(x_new, y_new)
-        plt.show()
+            plt.plot([0, 1000], [400, 400], color='k')
+            plt.plot([0, 1000], [500, 500], color='k')
+            plt.plot([0, 1000], [600, 600], color='k')
+
+            plt.scatter(trajectory.xs, trajectory.ys, c='r', marker='.')
+            plt.plot(x_new, y_new)
+            plt.show()
+
+    def save_trajectory(self, trajectory, video_name, trajectory_number):
+        start_lane_index, starts_in_center = trajectory.get_start_lane_index()
+        if start_lane_index is None:
+            return
+        primitive = self.get_car_trajectory_primitive(trajectory)
+        pickle_dict = {
+            'starts_in_center': starts_in_center,
+            'start_lane_index': start_lane_index,
+            'primitive': primitive,
+            'states': trajectory.list_of_states
+        }
+        pickle_save_path = '{0}/{1}/car_trajectories'.format(self.config.save_debug_pickles_path, video_name)
+        if not os.path.exists(pickle_save_path):
+            os.makedirs(pickle_save_path)
+        with open(os.path.join(pickle_save_path, 'traj%d.pkl' % trajectory_number), 'wb+') as trajectory_file:
+            pickle.dump(pickle_dict, trajectory_file)
